@@ -1,4 +1,4 @@
-# 🗳️ Digital Voting Machine (DVM) — Student & Class Elections
+# 🗳️ Digital Voting Machine (DVM) — AI POWERED ELECTIONS/VOTINGS
 
 > **A production-grade, cryptographically secure online voting web application tailored for student council, Class Monitor, and Class Representative (CR) elections. Featuring a modern Cyber-Elegance dark aesthetic and integrated with Google Gemini 2.0 / 1.5 Flash.**
 
