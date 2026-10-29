@@ -1,0 +1,117 @@
+// Prisma Schema for Digital Voting Machine (DVM)
+// Tailored for Student / Class Elections (Class Monitor / Class Representative)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // or "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  CANDIDATE
+  ADMIN
+}
+
+enum ElectionStatus {
+  UPCOMING
+  ACTIVE
+  CLOSED
+}
+
+model User {
+  id           String        @id @default(uuid())
+  studentId    String        @unique // e.g. "STU2026-042"
+  fullName     String
+  email        String        @unique
+  passwordHash String
+  role         Role          @default(STUDENT)
+  className    String        // e.g. "Grade 10-A", "CS-Final-Year"
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Candidate profile (optional 1-to-1)
+  candidate    Candidate?
+
+  // Anonymized voter receipt tokens (Double-vote check)
+  voterReceipts VoterReceipt[]
+
+  @@index([studentId])
+  @@index([className])
+}
+
+model Election {
+  id          String         @id @default(uuid())
+  title       String         // e.g. "Class Monitor Election 2026-27"
+  description String         // e.g. "Election for Grade 10-A Class Representative"
+  targetClass String         // e.g. "Grade 10-A" or "ALL"
+  status      ElectionStatus @default(ACTIVE)
+  startTime   DateTime       @default(now())
+  endTime     DateTime?
+  totalVotes  Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  candidates   Candidate[]
+  votes        Vote[]
+  voterReceipts VoterReceipt[]
+
+  @@index([status])
+}
+
+model Candidate {
+  id           String    @id @default(uuid())
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  electionId   String
+  election     Election  @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  slogan       String    // e.g. "Voice for Every Desk, Transparency First"
+  manifesto    String    // Full student manifesto
+  summaryAI    String?   // Generated 3-bullet AI summary from Gemini
+  avatarUrl    String?
+  voteCount    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  votes        Vote[]
+
+  @@index([electionId])
+}
+
+// =========================================================================
+// CRITICAL VOTING INTEGRITY & BALLOT ANONYMITY SYSTEM
+// =========================================================================
+
+// 1. VoterReceipt records that a specific student cast their ballot in an election.
+// It stores a cryptographic one-way hash (SHA-256) of studentId + electionSecret.
+// It NEVER points to which candidate the student voted for.
+model VoterReceipt {
+  id           String   @id @default(uuid())
+  electionId   String
+  election     Election @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  receiptHash  String   @unique // SHA256(studentId + electionId + salt)
+  votedAt      DateTime @default(now())
+
+  @@unique([electionId, userId]) // Enforces strictly 1 vote per student per election at DB constraint level
+  @@index([receiptHash])
+}
+
+// 2. Vote record stores the actual candidate tally entry completely decoupled
+// from the student's personal identity to guarantee 100% ballot secrecy.
+model Vote {
+  id          String   @id @default(uuid())
+  electionId  String
+  election    Election @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  ballotNonce String   @unique // Cryptographic random nonce for audit trail
+  timestamp   DateTime @default(now())
+
+  @@index([electionId])
+  @@index([candidateId])
+}

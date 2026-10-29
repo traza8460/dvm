@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+/* 🔒 Disable text selection and copy globally (except form inputs) */
+*, *::before, *::after {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+input, textarea, [contenteditable="true"] {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+::selection {
+  background: transparent;
+  color: inherit;
+}
+
+@layer base {
+  body {
+    background-color: #05060b;
+    color: #f4f4f5;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
+/* Ambient glow & glassmorphism utilities */
+.glass-panel {
+  background: rgba(14, 16, 25, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(20, 22, 34, 0.65);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glow-purple {
+  box-shadow: 0 0 25px rgba(129, 140, 248, 0.25);
+}
+
+.glow-button {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.4), 0 0 40px rgba(124, 58, 237, 0.2);
+}
+
+.glow-button:hover {
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.6), 0 0 60px rgba(124, 58, 237, 0.35);
+}
+
+/* 🌟 Keyframes for Animated Cyber-Nebula Background */
+@keyframes float-1 {
+  0%, 100% {
+    transform: translate3d(0px, 0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate3d(35px, -45px, 0px) scale(1.08);
+  }
+  66% {
+    transform: translate3d(-25px, 25px, 0px) scale(0.96);
+  }
+}
+
+@keyframes float-2 {
+  0%, 100% {
+    transform: translate3d(0px, 0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate3d(-40px, 35px, 0px) scale(0.92);
+  }
+  66% {
+    transform: translate3d(30px, -30px, 0px) scale(1.06);
+  }
+}
+
+@keyframes float-3 {
+  0%, 100% {
+    transform: translate3d(0px, 0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate3d(40px, 50px, 0px) scale(1.12);
+  }
+}
+
+@keyframes cyber-pulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(1) translate3d(-50%, 0, 0);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.08) translate3d(-50%, -15px, 0);
+  }
+}
+
+@keyframes aurora-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-float-1 {
+  animation: float-1 16s ease-in-out infinite;
+}
+
+.animate-float-2 {
+  animation: float-2 20s ease-in-out infinite;
+}
+
+.animate-float-3 {
+  animation: float-3 24s ease-in-out infinite;
+}
+
+.animate-cyber-pulse {
+  animation: cyber-pulse 9s ease-in-out infinite;
+}
+
+.animate-aurora {
+  background-size: 200% 200%;
+  animation: aurora-shift 20s ease infinite;
+}
