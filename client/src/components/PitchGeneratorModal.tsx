@@ -87,7 +87,7 @@ export const PitchGeneratorModal: React.FC<PitchGeneratorModalProps> = ({
                 required
                 value={candidateName}
                 onChange={e => setCandidateName(e.target.value)}
-                placeholder="e.g. Rohan Verma"
+                placeholder="e.g. Aarav Sharma"
                 className="w-full bg-[#181926] border border-zinc-700/60 focus:border-purple-500 rounded-xl px-3.5 py-2.5 text-white placeholder-zinc-500 outline-none"
               />
             </div>

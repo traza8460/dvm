@@ -142,7 +142,7 @@ export async function createElection(req: AuthenticatedRequest, res: Response) {
 
 export async function getDatabaseRegistryHandler(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const registry = db.getDatabaseRegistry(id);
     return res.json(registry);
   } catch (err: any) {

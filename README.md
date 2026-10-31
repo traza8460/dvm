@@ -373,7 +373,7 @@ DVM automatically initializes the SQLite database (`server/dvm.db`) with active 
 
 | Role | Student ID | Full Name | Password | Capabilities |
 |---|---|---|---|---|
-| **Student (Voter)** | `STU2026-042` | Aryan Sharma | `pass123` | Cast 1 ballot, read manifestos, query Gemini proctor |
+| **Student (Voter)** | `STU-001` | Aarav Sharma | `pass123` | Cast 1 ballot, read manifestos, query Gemini proctor |
 | **Admin** | `ADMIN-001` | Election Officer | `admin123` | Review live tallies, inspect Fraud Sentinel, access SQLite Registry |
 
 *(You can also click **"Test Voter"** or **"Admin"** buttons in the Sign-In modal to instantly autofill credentials, or register a new student account using the Sign-Up tab).*

@@ -64,7 +64,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const handleQuickDemo = (type: 'student' | 'admin') => {
     if (type === 'student') {
-      setStudentId('STU2026-042');
+      setStudentId('STU-001');
       setPassword('pass123');
     } else {
       setStudentId('ADMIN-001');
@@ -168,7 +168,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 required
                 value={studentId}
                 onChange={e => setStudentId(e.target.value)}
-                placeholder="e.g. STU2026-042 or ADMIN-001"
+                placeholder="e.g. STU-001 or ADMIN-001"
                 className="w-full bg-[#181926] border border-zinc-700/60 focus:border-purple-500 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-zinc-500 outline-none font-mono"
               />
             </div>

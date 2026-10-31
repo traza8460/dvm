@@ -241,8 +241,8 @@ class DatabaseStore {
 
     const studentUser: User = {
       id: 'stu-demo',
-      studentId: 'STU2026-042',
-      fullName: 'Aarav Patel',
+      studentId: 'STU-001',
+      fullName: 'Aarav Sharma',
       email: 'aarav@student.edu',
       passwordHash: '$2a$10$vU8mR36h1T4i1E2dG8gDwe5p1l8C1f3r6s8y0u2w4z6x8a0b2c4d6',
       role: 'STUDENT',
@@ -257,13 +257,13 @@ class DatabaseStore {
     const c1: Candidate = {
       id: 'cand-1',
       userId: 'user-c1',
-      fullName: 'Rohan Verma',
-      studentId: 'STU2026-015',
+      fullName: 'Aarav Sharma',
+      studentId: 'STU-001',
       electionId,
       slogan: 'Action Over Excuses — Better Lab Equipments & Fair Homework Windows!',
       manifesto: 'I will advocate for weekly doubt clearing sessions with teachers, ensure sports equipment is distributed fairly during zero-period, and establish a class anonymous grievance box.',
       summaryAI: '• Weekly teacher doubt sessions\n• Fair zero-period sports equipment\n• Anonymous grievance redressal box',
-      avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&auto=format&fit=crop&q=80',
+      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
       voteCount: 14,
       createdAt: new Date().toISOString()
     };
@@ -271,13 +271,13 @@ class DatabaseStore {
     const c2: Candidate = {
       id: 'cand-2',
       userId: 'user-c2',
-      fullName: 'Ananya Sharma',
-      studentId: 'STU2026-028',
+      fullName: 'Diya Patel',
+      studentId: 'STU-002',
       electionId,
       slogan: 'Empowering Every Voice — Inclusive Cultural Events & Clean Smart Classrooms.',
       manifesto: 'My priorities are digitizing class study notes onto a shared Google Drive, organizing regular inter-house debate prep, and ensuring strict punctuality and clean water dispenser maintenance.',
       summaryAI: '• Centralized digital study repository\n• Inter-house debate & quiz prep\n• Clean water & smart-board upkeep',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+      avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80',
       voteCount: 18,
       isElected: true, // Currently leading candidate
       createdAt: new Date().toISOString()
@@ -286,13 +286,13 @@ class DatabaseStore {
     const c3: Candidate = {
       id: 'cand-3',
       userId: 'user-c3',
-      fullName: 'Kabir Mehta',
-      studentId: 'STU2026-033',
+      fullName: 'Arjun Nair',
+      studentId: 'STU-003',
       electionId,
       slogan: 'Sports, Balance & Discipline — More Tournament Slots & Practical Learning.',
       manifesto: 'I aim to introduce a peer-mentorship program before quarterly exams, secure two extra athletic practice slots per month, and represent student requests honestly to the principal.',
       summaryAI: '• Peer exam study mentorship\n• Extra athletic tournament slots\n• Direct student-to-principal voice',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
+      avatarUrl: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=300&auto=format&fit=crop&q=80',
       voteCount: 9,
       createdAt: new Date().toISOString()
     };

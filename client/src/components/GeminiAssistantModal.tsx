@@ -33,8 +33,8 @@ export const GeminiAssistantModal: React.FC<GeminiAssistantModalProps> = ({
 
   const quickQuestions = [
     'How is my ballot anonymity protected?',
-    "What are Rohan Verma's key promises?",
-    "What is Ananya Sharma's plan for study notes?",
+    "What are Aarav Sharma's key promises?",
+    "What is Diya Patel's plan for study notes?",
     'What happens if there is a tie?'
   ];
 
@@ -70,7 +70,7 @@ export const GeminiAssistantModal: React.FC<GeminiAssistantModalProps> = ({
           electionContext: electionContext || {
             title: 'Class Monitor Election 2026-27',
             class: 'Grade 11-A',
-            candidates: ['Rohan Verma', 'Ananya Sharma', 'Kabir Mehta']
+            candidates: ['Aarav Sharma', 'Diya Patel', 'Arjun Nair']
           }
         })
       });

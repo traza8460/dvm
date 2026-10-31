@@ -158,21 +158,21 @@ Provide a concise, encouraging, and strictly objective 2-3 sentence answer direc
     }
 
     // 3. Candidate Specific Queries
-    if (q.includes('rohan')) {
-      return "Rohan Verma's core campaign promises are:\n1. Weekly teacher doubt-clearing sessions before exams.\n2. Fair and equal distribution of zero-period sports equipment.\n3. An anonymous classroom grievance redressal box for peer concerns.";
+    if (q.includes('aarav') || q.includes('rohan')) {
+      return "Aarav Sharma's (STU-001) core campaign promises are:\n1. Weekly teacher doubt-clearing sessions before exams.\n2. Fair and equal distribution of zero-period sports equipment.\n3. An anonymous classroom grievance redressal box for peer concerns.";
     }
 
-    if (q.includes('ananya') || q.includes('notes') || q.includes('study notes')) {
-      return "Ananya Sharma's core campaign promises are:\n1. Digitizing class study notes onto a centralized, shared Google Drive folder.\n2. Organizing inter-house debate and academic quiz prep.\n3. Ensuring clean drinking water dispenser maintenance and smart-board upkeep.";
+    if (q.includes('diya') || q.includes('ananya') || q.includes('notes') || q.includes('study notes')) {
+      return "Diya Patel's (STU-002) core campaign promises are:\n1. Digitizing class study notes onto a centralized, shared Google Drive folder.\n2. Organizing inter-house debate and academic quiz prep.\n3. Ensuring clean drinking water dispenser maintenance and smart-board upkeep.";
     }
 
-    if (q.includes('kabir')) {
-      return "Kabir Mehta's core campaign promises are:\n1. A peer-led mentorship study program before quarterly exams.\n2. Securing two extra athletic practice and tournament slots per month.\n3. Direct, honest student representation to the school principal.";
+    if (q.includes('arjun') || q.includes('kabir')) {
+      return "Arjun Nair's (STU-003) core campaign promises are:\n1. A peer-led mentorship study program before quarterly exams.\n2. Securing two extra athletic practice and tournament slots per month.\n3. Direct, honest student representation to the school principal.";
     }
 
     // 4. Candidates list / Who is running
     if (q.includes('candidate') || q.includes('who is running') || q.includes('who are running') || q.includes('nominee') || q.includes('options')) {
-      return "There are 3 candidates running in this election:\n• Rohan Verma — 'Action Over Excuses' (Focus: Doubt sessions & sports gear)\n• Ananya Sharma — 'Empowering Every Voice' (Focus: Digital notes & cultural events)\n• Kabir Mehta — 'Sports, Balance & Discipline' (Focus: Athletic tournaments & peer mentorship).";
+      return "There are 3 candidates running in this election:\n• Aarav Sharma (STU-001) — 'Action Over Excuses' (Focus: Doubt sessions & sports gear)\n• Diya Patel (STU-002) — 'Empowering Every Voice' (Focus: Digital notes & cultural events)\n• Arjun Nair (STU-003) — 'Sports, Balance & Discipline' (Focus: Athletic tournaments & peer mentorship).";
     }
 
     // 5. How to vote / Voting process
@@ -206,11 +206,11 @@ Provide a concise, encouraging, and strictly objective 2-3 sentence answer direc
 
     // 10. Greetings
     if (q.includes('hi') || q.includes('hello') || q.includes('hey') || q.startsWith('namaste')) {
-      return "Hello! I am your AI Student Election Assistant. How can I help you today? You can ask me about candidate promises (Rohan, Ananya, Kabir), ballot secrecy, tie-breaker rules, or how to vote!";
+      return "Hello! I am your AI Student Election Assistant. How can I help you today? You can ask me about candidate promises (Aarav, Diya, Arjun), ballot secrecy, tie-breaker rules, or how to vote!";
     }
 
     // 11. Intelligent Default
-    return `Regarding "${question}": In the Class Monitor Election 2026-27, all voting is strictly anonymous, verified via SHA-256 tokens, and limited to one vote per student. You can explore candidate manifestos (Rohan Verma, Ananya Sharma, Kabir Mehta) directly on your dashboard, or ask me for their specific agendas!`;
+    return `Regarding "${question}": In the Class Monitor Election 2026-27, all voting is strictly anonymous, verified via SHA-256 tokens, and limited to one vote per student. You can explore candidate manifestos (Aarav Sharma, Diya Patel, Arjun Nair) directly on your dashboard, or ask me for their specific agendas!`;
   }
 
   /**
