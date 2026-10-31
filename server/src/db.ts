@@ -568,7 +568,6 @@ class DatabaseStore {
       id: u.id,
       studentId: u.studentId,
       fullName: u.fullName,
-      email: u.email,
       role: u.role,
       className: u.className,
       createdAt: u.createdAt
