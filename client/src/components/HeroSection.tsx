@@ -170,7 +170,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
                 
                 {/* Mode Switch Tabs (Login / Sign Up) */}
-                <div className="flex items-center justify-center gap-2 p-1 rounded-full bg-[#060a14] border border-cyan-500/30 max-w-[240px] mx-auto mb-2">
+                <div className="flex items-center justify-center gap-2 p-1 rounded-full bg-[#060a14] border border-cyan-500/30 max-w-[240px] mx-auto mb-1">
                   <button
                     type="button"
                     onClick={() => { setActiveTab('login'); setError(''); }}
@@ -192,6 +192,35 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     }`}
                   >
                     Sign Up
+                  </button>
+                </div>
+
+                {/* 1-Click Auto Fill Demo Buttons */}
+                <div className="flex items-center justify-center gap-2 py-1 flex-wrap">
+                  <span className="text-[11px] text-zinc-400 font-mono">1-Click Test:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('login');
+                      setEmail('ADMIN-001');
+                      setPassword('admin123');
+                      setError('');
+                    }}
+                    className="px-3 py-1 rounded-full text-xs font-bold font-mono bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.3)] transition-all cursor-pointer flex items-center gap-1 active:scale-95"
+                  >
+                    <span>🛡️ Admin (ADMIN-001)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('login');
+                      setEmail('STU-001');
+                      setPassword('pass123');
+                      setError('');
+                    }}
+                    className="px-3 py-1 rounded-full text-xs font-bold font-mono bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.3)] transition-all cursor-pointer flex items-center gap-1 active:scale-95"
+                  >
+                    <span>🎓 Student (STU-001)</span>
                   </button>
                 </div>
 
@@ -221,16 +250,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   </div>
                 )}
 
-                {/* Email ID Input (Exact pill with Mail icon) */}
+                {/* Email / Student ID Input (Exact pill with Mail icon) */}
                 <div className="relative flex items-center rounded-full bg-[#0b1222]/95 border-2 border-sky-600/40 focus-within:border-cyan-400 focus-within:shadow-[0_0_15px_rgba(6,182,212,0.35)] px-5 py-3 sm:py-3.5 transition-all">
                   <Mail className="w-4.5 h-4.5 text-cyan-400 shrink-0 mr-3" />
                   <input
-                    type="email"
+                    type={activeTab === 'login' ? 'text' : 'email'}
                     required
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    placeholder="Email ID"
-                    className="w-full bg-transparent outline-none text-xs sm:text-sm text-white placeholder-zinc-500 font-medium"
+                    placeholder={activeTab === 'login' ? 'Admin ID (ADMIN-001) or Student ID' : 'Email ID'}
+                    className="w-full bg-transparent outline-none text-xs sm:text-sm text-white placeholder-zinc-500 font-medium font-mono"
                   />
                 </div>
 
