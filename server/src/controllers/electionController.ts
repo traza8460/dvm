@@ -149,3 +149,18 @@ export async function getDatabaseRegistryHandler(req: Request, res: Response) {
     return res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
   }
 }
+
+// 🔒 STRICT ADMIN-ONLY: Exclusively returns the voter-to-candidate audit map
+export async function getAdminVoteAuditHandler(req: Request, res: Response) {
+  try {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const auditRecords = db.getAdminVoteAudit(id);
+    return res.json({
+      success: true,
+      count: auditRecords.length,
+      auditTrail: auditRecords
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+}

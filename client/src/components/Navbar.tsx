@@ -1,5 +1,5 @@
 import React from 'react';
-import { Vote, BarChart3, Sun, Moon, LogIn, LogOut, UserCheck } from 'lucide-react';
+import { Vote, BarChart3, Sun, Moon, LogIn, LogOut, UserCheck, ShieldAlert } from 'lucide-react';
 
 interface NavbarProps {
   onOpenResults: () => void;
@@ -68,6 +68,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             {isLightMode ? <Moon className="w-5 h-5 text-indigo-300" /> : <Sun className="w-5 h-5 text-amber-400" />}
             <span className="hidden sm:inline text-xs font-semibold">{isLightMode ? 'Dark' : 'Light'}</span>
           </button>
+
+          {/* Admin Audit Exclusive Button */}
+          {currentUser?.role === 'ADMIN' && (
+            <button
+              onClick={onOpenResults}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 text-xs font-bold shadow-[0_0_15px_rgba(244,63,94,0.3)] transition-all cursor-pointer"
+              title="Open Secret Admin Audit (Who Voted For Whom)"
+            >
+              <ShieldAlert className="w-4 h-4 text-rose-400" />
+              <span className="hidden sm:inline">Admin Audit</span>
+            </button>
+          )}
 
           {/* User Account / Logout (When logged in) */}
           {currentUser && (

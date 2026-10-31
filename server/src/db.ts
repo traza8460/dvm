@@ -138,6 +138,18 @@ class DatabaseStore {
         ballotNonce TEXT UNIQUE,
         timestamp TEXT
       );
+
+      CREATE TABLE IF NOT EXISTS admin_vote_audit (
+        id TEXT PRIMARY KEY,
+        electionId TEXT,
+        studentId TEXT,
+        studentName TEXT,
+        candidateId TEXT,
+        candidateName TEXT,
+        candidateAvatar TEXT,
+        receiptHash TEXT,
+        votedAt TEXT
+      );
     `);
   }
 
@@ -447,6 +459,22 @@ class DatabaseStore {
       this.sqlite.prepare(`
         UPDATE elections SET totalVotes = totalVotes + 1 WHERE id = ?
       `).run(election.id);
+
+      const user = this.users.get(userId);
+      this.sqlite.prepare(`
+        INSERT INTO admin_vote_audit (id, electionId, studentId, studentName, candidateId, candidateName, candidateAvatar, receiptHash, votedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        crypto.randomUUID(),
+        electionId,
+        studentId,
+        user?.fullName || 'Student Voter',
+        candidate.id,
+        candidate.fullName,
+        candidate.avatarUrl,
+        receiptHash,
+        receipt.votedAt
+      );
     } catch (err) {
       console.error('Failed to sync vote transaction to SQLite:', err);
     }
@@ -508,6 +536,22 @@ class DatabaseStore {
       candidates: candidatesList,
       electedMembers: electedMembers
     };
+  }
+
+  // 🔒 CONFIDENTIAL ADMIN AUDIT: Who voted for whom (strictly for role === 'ADMIN')
+  getAdminVoteAudit(electionId?: string) {
+    try {
+      let rows: any[];
+      if (electionId) {
+        rows = this.sqlite.prepare('SELECT * FROM admin_vote_audit WHERE electionId = ? ORDER BY votedAt DESC').all(electionId);
+      } else {
+        rows = this.sqlite.prepare('SELECT * FROM admin_vote_audit ORDER BY votedAt DESC').all();
+      }
+      return rows;
+    } catch (err) {
+      console.error('Failed to query admin_vote_audit:', err);
+      return [];
+    }
   }
 }
 

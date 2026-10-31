@@ -267,6 +267,8 @@ export function App() {
         isOpen={isResultsOpen}
         onClose={() => setIsResultsOpen(false)}
         electionId={currentElection?.id || ''}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthOpen(true)}
       />
 
       <PitchGeneratorModal

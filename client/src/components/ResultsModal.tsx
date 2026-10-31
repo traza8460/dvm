@@ -11,25 +11,41 @@ import {
   Database,
   Users,
   Award,
-  UserCheck
+  UserCheck,
+  ShieldAlert,
+  Search,
+  KeyRound,
+  Eye
 } from 'lucide-react';
 
 interface ResultsModalProps {
   isOpen: boolean;
   onClose: () => void;
   electionId: string;
+  currentUser?: any;
+  onOpenAuth?: () => void;
+  initialTab?: 'tally' | 'audit' | 'database' | 'admin-audit';
 }
 
 export const ResultsModal: React.FC<ResultsModalProps> = ({
   isOpen,
   onClose,
-  electionId
+  electionId,
+  currentUser,
+  onOpenAuth,
+  initialTab = 'tally'
 }) => {
   const [resultsData, setResultsData] = useState<any>(null);
   const [dbRegistry, setDbRegistry] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'tally' | 'audit' | 'database'>('tally');
+  const [activeTab, setActiveTab] = useState<'tally' | 'audit' | 'database' | 'admin-audit'>(initialTab);
   const [activeDbView, setActiveDbView] = useState<'elected' | 'users' | 'voters'>('elected');
+
+  // Admin Audit State (Who voted for whom)
+  const [adminAuditData, setAdminAuditData] = useState<any[]>([]);
+  const [adminAuditLoading, setAdminAuditLoading] = useState(false);
+  const [adminAuditError, setAdminAuditError] = useState<string | null>(null);
+  const [adminSearch, setAdminSearch] = useState('');
 
   const fetchResults = async () => {
     setIsLoading(true);
@@ -50,11 +66,52 @@ export const ResultsModal: React.FC<ResultsModalProps> = ({
     }
   };
 
+  const fetchAdminAudit = async () => {
+    if (!currentUser || currentUser.role !== 'ADMIN') {
+      setAdminAuditError('ACCESS_DENIED');
+      return;
+    }
+    setAdminAuditLoading(true);
+    setAdminAuditError(null);
+    try {
+      const token = localStorage.getItem('dvm_token');
+      const res = await fetch('/api/elections/admin/vote-audit', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!res.ok) {
+        setAdminAuditError('ACCESS_DENIED');
+        return;
+      }
+      const data = await res.json();
+      if (data.auditTrail) {
+        setAdminAuditData(data.auditTrail);
+      }
+    } catch (err: any) {
+      setAdminAuditError(err.message);
+    } finally {
+      setAdminAuditLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       fetchResults();
+      if (currentUser?.role === 'ADMIN') {
+        fetchAdminAudit();
+      }
+      if (initialTab) {
+        setActiveTab(initialTab);
+      }
     }
-  }, [isOpen, electionId]);
+  }, [isOpen, electionId, currentUser]);
+
+  useEffect(() => {
+    if (activeTab === 'admin-audit' && currentUser?.role === 'ADMIN') {
+      fetchAdminAudit();
+    }
+  }, [activeTab]);
 
   if (!isOpen) return null;
 
@@ -137,6 +194,20 @@ export const ResultsModal: React.FC<ResultsModalProps> = ({
           >
             <Database className="w-4 h-4 text-cyan-400" />
             Database Registry (SQLite)
+          </button>
+          <button
+            onClick={() => setActiveTab('admin-audit')}
+            className={`py-3 px-4 text-xs font-semibold uppercase tracking-wider border-b-2 flex items-center gap-2 transition-all shrink-0 ${
+              activeTab === 'admin-audit'
+                ? 'border-rose-500 text-rose-400 bg-rose-500/10 shadow-[0_0_15px_rgba(244,63,94,0.15)]'
+                : 'border-transparent text-zinc-400 hover:text-rose-300'
+            }`}
+          >
+            <ShieldAlert className="w-4 h-4 text-rose-400" />
+            <span>Who Voted For Whom</span>
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-rose-950/80 border border-rose-500/50 text-rose-300">
+              ADMIN ONLY
+            </span>
           </button>
         </div>
 
@@ -457,6 +528,170 @@ export const ResultsModal: React.FC<ResultsModalProps> = ({
                 </div>
               )}
 
+            </div>
+          )}
+
+          {/* TAB 4: STRICT ADMIN ONLY AUDIT (Who Voted For Whom) */}
+          {activeTab === 'admin-audit' && (
+            <div className="space-y-4 animate-fade-in">
+              {(!currentUser || currentUser.role !== 'ADMIN' || adminAuditError === 'ACCESS_DENIED') ? (
+                <div className="py-12 px-6 text-center max-w-md mx-auto space-y-4 bg-[#141522]/80 border border-rose-500/30 rounded-2xl p-6 shadow-2xl">
+                  <div className="w-16 h-16 rounded-2xl bg-rose-950/70 border border-rose-500/50 flex items-center justify-center mx-auto text-rose-400 shadow-[0_0_25px_rgba(244,63,94,0.3)]">
+                    <Lock className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <span className="inline-block px-3 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase bg-rose-950/90 border border-rose-500/40 text-rose-300 mb-2">
+                      RESTRICTED • ADMIN-001 ONLY
+                    </span>
+                    <h4 className="text-lg font-bold text-white tracking-tight">Access Locked: Ballot Secrecy Active</h4>
+                    <p className="text-xs text-zinc-400 leading-relaxed mt-2">
+                      Normal students and non-administrative accounts cannot view individual voter selections to preserve democratic secrecy. Only the Election Officer with master credentials can decrypt and view this ledger.
+                    </p>
+                  </div>
+                  <div className="pt-2 flex justify-center">
+                    <button
+                      onClick={() => {
+                        onClose();
+                        if (onOpenAuth) onOpenAuth();
+                      }}
+                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-rose-500 to-purple-600 hover:scale-105 text-white text-xs font-bold shadow-lg shadow-rose-600/30 flex items-center gap-2 transition-all cursor-pointer"
+                    >
+                      <KeyRound className="w-4 h-4" />
+                      <span>Log in as ADMIN-001 to Decrypt</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* UNLOCKED ADMIN AUDIT VIEW */
+                <div className="space-y-4">
+                  {/* Top Info Banner */}
+                  <div className="p-4 rounded-2xl bg-[#141522] border border-rose-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(244,63,94,0.1)]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0">
+                        <Eye className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-bold text-white">Voter ➔ Candidate Decrypted Audit Trail</h4>
+                          <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-rose-950 border border-rose-500/50 text-rose-300">
+                            CONFIDENTIAL
+                          </span>
+                        </div>
+                        <p className="text-xs text-zinc-400 mt-0.5">
+                          Authenticated as: <span className="text-rose-300 font-semibold">{currentUser.fullName}</span> ({currentUser.studentId})
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      <span className="text-[11px] font-mono text-zinc-400 bg-black/40 px-3 py-1.5 rounded-lg border border-zinc-800">
+                        Total Audited: <strong className="text-white">{adminAuditData.length}</strong>
+                      </span>
+                      <button
+                        onClick={fetchAdminAudit}
+                        disabled={adminAuditLoading}
+                        className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-all text-xs flex items-center gap-1 px-2.5 cursor-pointer"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${adminAuditLoading ? 'animate-spin' : ''}`} />
+                        <span>Refresh</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={adminSearch}
+                      onChange={e => setAdminSearch(e.target.value)}
+                      placeholder="Search by student name, roll number (e.g. STU-010), or candidate..."
+                      className="w-full bg-[#0a0b12] border border-[#232438] focus:border-rose-500/60 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-zinc-500 outline-none"
+                    />
+                  </div>
+
+                  {/* Audit Table */}
+                  {adminAuditLoading ? (
+                    <div className="py-12 text-center text-zinc-400 text-xs font-mono">
+                      <div className="inline-block w-6 h-6 border-2 border-rose-500 border-t-transparent rounded-full animate-spin mb-2" />
+                      <p>Decrypting secure voter audit ledger...</p>
+                    </div>
+                  ) : adminAuditData.filter((item: any) => {
+                      if (!adminSearch) return true;
+                      const s = adminSearch.toLowerCase();
+                      return (
+                        item.studentName?.toLowerCase().includes(s) ||
+                        item.studentId?.toLowerCase().includes(s) ||
+                        item.candidateName?.toLowerCase().includes(s)
+                      );
+                    }).length === 0 ? (
+                    <div className="py-10 text-center text-zinc-500 text-xs bg-[#141522] rounded-xl border border-[#232438]">
+                      No matching audit records found.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-xl border border-rose-500/20 bg-[#0c0d14]">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-[#141522] text-zinc-400 font-semibold border-b border-[#232438]">
+                          <tr>
+                            <th className="py-2.5 px-3">Voter (Student)</th>
+                            <th className="py-2.5 px-3">Student Roll</th>
+                            <th className="py-2.5 px-3">Voted For (Candidate)</th>
+                            <th className="py-2.5 px-3">Cryptographic Receipt</th>
+                            <th className="py-2.5 px-3">Time</th>
+                            <th className="py-2.5 px-3 text-right">Audit</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#1e1f2f] text-zinc-300">
+                          {adminAuditData.filter((item: any) => {
+                            if (!adminSearch) return true;
+                            const s = adminSearch.toLowerCase();
+                            return (
+                              item.studentName?.toLowerCase().includes(s) ||
+                              item.studentId?.toLowerCase().includes(s) ||
+                              item.candidateName?.toLowerCase().includes(s)
+                            );
+                          }).map((item: any) => (
+                            <tr key={item.id} className="hover:bg-rose-500/5 transition-colors font-mono">
+                              <td className="py-2.5 px-3 text-white font-sans font-medium flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-[10px] text-indigo-300 font-bold shrink-0">
+                                  {item.studentName?.charAt(0) || 'S'}
+                                </div>
+                                <span>{item.studentName}</span>
+                              </td>
+                              <td className="py-2.5 px-3 text-cyan-300">{item.studentId}</td>
+                              <td className="py-2.5 px-3">
+                                <div className="flex items-center gap-2">
+                                  {item.candidateAvatar && (
+                                    <img
+                                      src={item.candidateAvatar}
+                                      alt={item.candidateName}
+                                      className="w-6 h-6 rounded-lg object-cover border border-purple-500/40 shrink-0"
+                                    />
+                                  )}
+                                  <span className="font-sans font-bold text-transparent bg-clip-text bg-gradient-to-r from-rose-300 to-amber-200">
+                                    {item.candidateName}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3 text-purple-300 text-[10px] truncate max-w-[120px]" title={item.receiptHash}>
+                                {item.receiptHash}
+                              </td>
+                              <td className="py-2.5 px-3 text-zinc-400 text-[10px] whitespace-nowrap">
+                                {new Date(item.votedAt).toLocaleTimeString()}
+                              </td>
+                              <td className="py-2.5 px-3 text-right">
+                                <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[9px] font-sans font-bold border border-rose-500/30">
+                                  AUDITED
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
