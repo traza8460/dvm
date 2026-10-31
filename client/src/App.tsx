@@ -84,6 +84,10 @@ export function App() {
     setCurrentUser(user);
     setAuthToken(token);
     fetchElections();
+    setTimeout(() => {
+      const el = document.getElementById('elections-feed');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 150);
   };
 
   const handleLogout = () => {
@@ -147,8 +151,12 @@ export function App() {
           onOpenAuth={() => setIsAuthOpen(true)}
           onOpenResults={() => setIsResultsOpen(true)}
           onOpenVote={() => {
-            const el = document.getElementById('elections-feed');
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
+            if (!currentUser) {
+              setIsAuthOpen(true);
+            } else {
+              const el = document.getElementById('elections-feed');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }
           }}
           onLogout={handleLogout}
           isLightMode={!isDarkMode}
@@ -160,23 +168,29 @@ export function App() {
           <HeroSection
             currentUser={currentUser}
             onCtaClick={() => {
-              const el = document.getElementById('elections-feed');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
+              if (!currentUser) {
+                setIsAuthOpen(true);
+              } else {
+                const el = document.getElementById('elections-feed');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }
             }}
             onLoginSuccess={handleLoginSuccess}
           />
 
-          {/* Elections Feed Card */}
-          <section id="elections-feed">
-            <OpenElectionsCard
-              elections={elections}
-              isLoading={isLoadingElections}
-              onVote={handleVote}
-              onSummarizeManifesto={c => setSelectedCandidate(c)}
-              currentUser={currentUser}
-              onOpenAuth={() => setIsAuthOpen(true)}
-            />
-          </section>
+          {/* Elections Feed Card - Only visible after login or signup */}
+          {currentUser && (
+            <section id="elections-feed" className="animate-fade-in pt-4">
+              <OpenElectionsCard
+                elections={elections}
+                isLoading={isLoadingElections}
+                onVote={handleVote}
+                onSummarizeManifesto={c => setSelectedCandidate(c)}
+                currentUser={currentUser}
+                onOpenAuth={() => setIsAuthOpen(true)}
+              />
+            </section>
+          )}
         </main>
       </div>
 
@@ -217,21 +231,15 @@ export function App() {
         </button>
       </div>
 
-      {/* Floating "Vote for your REPRESENTATIVE" - 50px higher & slightly more compact */}
-      <div className="fixed right-5 sm:right-8 top-[calc(50%+250px)] -translate-y-1/2 z-40">
-        <button
-          onClick={() => {
-            const el = document.getElementById('elections-feed');
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-          }}
-          className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-[#090e1d]/90 hover:bg-[#0c1428] border border-cyan-500/30 hover:border-cyan-400/70 text-zinc-300 text-[11px] sm:text-xs font-semibold tracking-wide shadow-[0_6px_20px_rgba(0,0,0,0.6)] hover:shadow-[0_6px_20px_rgba(6,182,212,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 backdrop-blur-xl whitespace-nowrap cursor-pointer"
-        >
+      {/* Floating "Vote for your REPRESENTATIVE" - Display Badge (Non-clickable) */}
+      <div className="fixed right-5 sm:right-8 top-[calc(50%+250px)] -translate-y-1/2 z-40 select-none pointer-events-none">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-[#090e1d]/90 border border-cyan-500/30 text-zinc-300 text-[11px] sm:text-xs font-semibold tracking-wide shadow-[0_6px_20px_rgba(0,0,0,0.6)] backdrop-blur-xl whitespace-nowrap">
           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_6px_#22d3ee]" />
           <span>Vote for your</span>
           <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-400 to-emerald-400 tracking-wider uppercase">
             REPRESENTATIVE
           </span>
-        </button>
+        </div>
       </div>
 
       {/* Modals */}

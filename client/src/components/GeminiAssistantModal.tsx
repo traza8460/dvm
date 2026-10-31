@@ -76,10 +76,11 @@ export const GeminiAssistantModal: React.FC<GeminiAssistantModalProps> = ({
       });
 
       const data = await res.json();
+      const botReply = data.answer || data.reply || data.text || 'I am ready to assist you with any questions regarding this election.';
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: 'gemini',
-        text: data.answer || 'I am ready to assist you with any questions regarding this election.',
+        text: botReply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, botMsg]);

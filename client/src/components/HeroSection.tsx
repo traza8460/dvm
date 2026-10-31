@@ -8,7 +8,8 @@ import {
   Lock, 
   Eye, 
   EyeOff, 
-  Loader2 
+  Loader2,
+  User
 } from 'lucide-react';
 import { GoogleAccountChooserPopup } from './GoogleAccountChooserPopup';
 
@@ -24,6 +25,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onLoginSuccess
 }) => {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
@@ -39,7 +41,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
     const isRegister = activeTab === 'signup';
     const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
-    const payload = { email, password };
+    const payload = isRegister ? { email, password, fullName } : { email, password };
 
     try {
       const res = await fetch(endpoint, {
@@ -204,6 +206,21 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   </div>
                 )}
 
+                {/* Full Name Input (Only on Sign Up) */}
+                {activeTab === 'signup' && (
+                  <div className="relative flex items-center rounded-full bg-[#0b1222]/95 border-2 border-sky-600/40 focus-within:border-cyan-400 focus-within:shadow-[0_0_15px_rgba(6,182,212,0.35)] px-5 py-3 sm:py-3.5 transition-all">
+                    <User className="w-4.5 h-4.5 text-cyan-400 shrink-0 mr-3" />
+                    <input
+                      type="text"
+                      required
+                      value={fullName}
+                      onChange={e => setFullName(e.target.value)}
+                      placeholder="Full Name"
+                      className="w-full bg-transparent outline-none text-xs sm:text-sm text-white placeholder-zinc-500 font-medium"
+                    />
+                  </div>
+                )}
+
                 {/* Email ID Input (Exact pill with Mail icon) */}
                 <div className="relative flex items-center rounded-full bg-[#0b1222]/95 border-2 border-sky-600/40 focus-within:border-cyan-400 focus-within:shadow-[0_0_15px_rgba(6,182,212,0.35)] px-5 py-3 sm:py-3.5 transition-all">
                   <Mail className="w-4.5 h-4.5 text-cyan-400 shrink-0 mr-3" />
@@ -329,10 +346,25 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
         </div>
 
-        {/* FULLY SECURED VOTING badge */}
-        <div className="mt-4 mb-2 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-zinc-950/90 border border-indigo-500/40 text-indigo-300 text-xs sm:text-sm font-semibold tracking-wide uppercase shadow-[0_0_20px_rgba(99,102,241,0.25)]">
-          <span className="text-indigo-400 font-bold text-sm">☆</span>
-          <span>FULLY SECURED VOTING</span>
+        {/* TRICOLOR ACCENT: Top & Bottom Lines around bottom badges */}
+        <div className="relative mt-5 mb-2 px-4 sm:px-8 py-3 w-full max-w-5xl mx-auto flex flex-col items-center">
+          {/* Top Tricolor Line */}
+          <div className="absolute top-0 left-2 right-2 sm:left-6 sm:right-6 h-[3px] bg-gradient-to-r from-[#FF671F] via-white to-[#046A38] rounded-full shadow-[0_0_15px_rgba(255,103,31,0.7)]" />
+
+          {/* FULLY SECURED VOTING badge */}
+          <div className="my-1 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-zinc-950/90 border border-indigo-500/40 text-indigo-300 text-xs sm:text-sm font-semibold tracking-wide uppercase shadow-[0_0_20px_rgba(99,102,241,0.25)]">
+            <span className="text-indigo-400 font-bold text-sm">☆</span>
+            <span>FULLY SECURED VOTING</span>
+          </div>
+
+          {/* ONE PERSON ONE VOTE ONE VALUE badge */}
+          <div className="my-1 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-zinc-950/90 border border-indigo-500/40 text-indigo-300 text-xs sm:text-sm font-semibold tracking-wide uppercase shadow-[0_0_20px_rgba(99,102,241,0.25)]">
+            <span className="text-indigo-400 font-bold text-sm">☆</span>
+            <span>One Person One Vote One Value</span>
+          </div>
+
+          {/* Bottom Tricolor Line */}
+          <div className="absolute bottom-0 left-2 right-2 sm:left-6 sm:right-6 h-[3px] bg-gradient-to-r from-[#FF671F] via-white to-[#046A38] rounded-full shadow-[0_0_15px_rgba(4,106,56,0.7)]" />
         </div>
 
       </div>

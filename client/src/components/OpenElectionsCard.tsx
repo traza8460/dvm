@@ -78,7 +78,7 @@ export const OpenElectionsCard: React.FC<OpenElectionsCardProps> = ({
               <Vote className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">Open Elections</h2>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">Open Elections Demo</h2>
               <p className="text-xs text-zinc-400">Verified official ballots for student representation</p>
             </div>
           </div>

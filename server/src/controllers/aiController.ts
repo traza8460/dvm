@@ -38,15 +38,18 @@ export async function compareManifestosHandler(req: Request, res: Response) {
 
 export async function askAssistantHandler(req: Request, res: Response) {
   try {
-    const { question, electionId } = req.body;
+    const { question, electionId, electionContext } = req.body;
     if (!question) {
       return res.status(400).json({ error: 'Question required' });
     }
 
-    const election = electionId ? db.elections.get(electionId) : Array.from(db.elections.values())[0];
+    const election = electionId 
+      ? db.elections.get(electionId) 
+      : (electionContext || Array.from(db.elections.values())[0]);
+      
     const reply = await GeminiService.askElectionAssistant(question, election);
 
-    return res.json({ reply });
+    return res.json({ reply, answer: reply });
   } catch (err: any) {
     return res.status(500).json({ error: 'AI_ERROR', message: err.message });
   }

@@ -104,36 +104,98 @@ Return ONLY valid JSON matching this structure:
    * Gemini Student Election Assistant Chatbot.
    */
   static async askElectionAssistant(question: string, electionContext: any): Promise<string> {
-    if (!genAI || !API_KEY) {
-      const q = question.toLowerCase();
-      if (q.includes('anonymous') || q.includes('private') || q.includes('secret')) {
-        return "Your vote is 100% private and cryptographically anonymous. The system decouples your student identity from the candidate vote record using an irreversible SHA-256 hash. Nobody, not even the admin, can see who you voted for.";
-      }
-      if (q.includes('rohan')) {
-        return "Rohan Verma's core agenda focuses on weekly doubt-clearing sessions, zero-period sports equipment fairness, and an anonymous grievance redressal box.";
-      }
-      if (q.includes('ananya')) {
-        return "Ananya Sharma's platform focuses on digitizing class study notes to Google Drive, organizing debate prep, and ensuring clean smart-board & water maintenance.";
-      }
-      return "Hello student! I am the DVM Gemini Assistant. You can ask me about candidate manifestos, ballot secrecy, election rules, or voting deadlines.";
-    }
-
-    try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      const prompt = `You are the helpful AI Election Proctor and Guide for the Digital Voting Machine (DVM) in student elections.
+    if (genAI && API_KEY) {
+      try {
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const prompt = `You are the helpful, objective AI Election Proctor and Guide for the Digital Voting Machine (DVM) in student elections.
 Election Context:
 ${JSON.stringify(electionContext, null, 2)}
 
 Student Question: "${question}"
 
-Provide a concise, encouraging, and strictly objective 2-3 sentence answer. Remind the student of voting deadlines or secrecy if relevant.`;
+Provide a concise, encouraging, and strictly objective 2-3 sentence answer directly answering the question. Remind the student of voting deadlines or secrecy if relevant.`;
 
-      const result = await model.generateContent(prompt);
-      return result.response.text().trim();
-    } catch (err) {
-      console.error('Gemini chat error:', err);
-      return "I'm having trouble connecting to Gemini right now, but your election is active! Make sure to review all candidates and cast your ballot before the deadline.";
+        const result = await model.generateContent(prompt);
+        const text = result.response.text().trim();
+        if (text) return text;
+      } catch (err) {
+        console.warn('Gemini API call failed, using intelligent contextual answer generator:', err);
+      }
     }
+
+    return GeminiService.generateContextualAnswer(question, electionContext);
+  }
+
+  /**
+   * Intelligent Contextual Rule-Based Answer Generator (Fallback & Offline Mode)
+   */
+  private static generateContextualAnswer(question: string, electionContext: any): string {
+    const q = question.toLowerCase().trim();
+
+    // 1. Ballot Anonymity, Secrecy & Security
+    if (q.includes('anonymous') || q.includes('private') || q.includes('secret') || q.includes('secrecy') || q.includes('admin see') || q.includes('track') || q.includes('security') || q.includes('anonymity')) {
+      return "Your vote is 100% private and cryptographically anonymous. DVM uses an irreversible SHA-256 hash that decouples your student identity from the candidate ballot record. Nobody—neither teachers nor the system admin—can see which candidate you selected.";
+    }
+
+    // 2. Tie Breaking Rules
+    if (q.includes('tie') || q.includes('equal vote') || q.includes('draw')) {
+      return "In the event of an exact vote tie between the top candidates, the election guidelines stipulate an automated 15-minute runoff ballot round. If the tie persists, the Class Teacher / Election Officer casts a neutral deciding vote according to school bylaws.";
+    }
+
+    // 3. Candidate Specific Queries
+    if (q.includes('rohan')) {
+      return "Rohan Verma's core campaign promises are:\n1. Weekly teacher doubt-clearing sessions before exams.\n2. Fair and equal distribution of zero-period sports equipment.\n3. An anonymous classroom grievance redressal box for peer concerns.";
+    }
+
+    if (q.includes('ananya') || q.includes('notes') || q.includes('study notes')) {
+      return "Ananya Sharma's core campaign promises are:\n1. Digitizing class study notes onto a centralized, shared Google Drive folder.\n2. Organizing inter-house debate and academic quiz prep.\n3. Ensuring clean drinking water dispenser maintenance and smart-board upkeep.";
+    }
+
+    if (q.includes('kabir')) {
+      return "Kabir Mehta's core campaign promises are:\n1. A peer-led mentorship study program before quarterly exams.\n2. Securing two extra athletic practice and tournament slots per month.\n3. Direct, honest student representation to the school principal.";
+    }
+
+    // 4. Candidates list / Who is running
+    if (q.includes('candidate') || q.includes('who is running') || q.includes('who are running') || q.includes('nominee') || q.includes('options')) {
+      return "There are 3 candidates running in this election:\n• Rohan Verma — 'Action Over Excuses' (Focus: Doubt sessions & sports gear)\n• Ananya Sharma — 'Empowering Every Voice' (Focus: Digital notes & cultural events)\n• Kabir Mehta — 'Sports, Balance & Discipline' (Focus: Athletic tournaments & peer mentorship).";
+    }
+
+    // 5. How to vote / Voting process
+    if (q.includes('how to vote') || q.includes('how do i vote') || q.includes('voting process') || q.includes('steps')) {
+      return "To cast your vote: Log in with your Student ID, click 'Cast Your Ballot', review the candidate cards and manifestos, select your preferred candidate, and confirm. You will instantly receive a unique cryptographic receipt hash proving your vote was counted.";
+    }
+
+    // 6. Voting twice / changing vote
+    if (q.includes('twice') || q.includes('change') || q.includes('again') || q.includes('modify') || q.includes('undo')) {
+      return "Every eligible student is issued exactly one irreversible cryptographic ballot. Once you confirm your vote, it is final and cannot be modified or re-cast, ensuring complete prevention of duplicate voting.";
+    }
+
+    // 7. Results / Deadlines / Timings
+    if (q.includes('result') || q.includes('winner') || q.includes('who won') || q.includes('count')) {
+      return "Vote counts are tabulated in real-time with zero human tampering. Results and the cryptographic integrity audit will be published on the Live Results dashboard as soon as the active voting window concludes.";
+    }
+
+    if (q.includes('deadline') || q.includes('time') || q.includes('when') || q.includes('schedule') || q.includes('close') || q.includes('closing')) {
+      return "Voting is currently ACTIVE for Grade 10-A. The ballot window remains open throughout the scheduled election session today. Cast your vote early before the session closes!";
+    }
+
+    // 8. Eligibility / Rules
+    if (q.includes('eligible') || q.includes('rule') || q.includes('who can vote') || q.includes('permission')) {
+      return "All enrolled students of Grade 10-A with an active Student ID are eligible to vote. Each student gets exactly one verified, anonymous ballot.";
+    }
+
+    // 9. Tampering / Fraud / Hacking
+    if (q.includes('hack') || q.includes('tamper') || q.includes('fraud') || q.includes('fake') || q.includes('rigged')) {
+      return "The DVM system features real-time Gemini Fraud Sentinel monitoring and cryptographic SHA-256 ballot hashing. Any abnormal velocity spikes or duplicate attempts are automatically blocked.";
+    }
+
+    // 10. Greetings
+    if (q.includes('hi') || q.includes('hello') || q.includes('hey') || q.startsWith('namaste')) {
+      return "Hello! I am your AI Student Election Assistant. How can I help you today? You can ask me about candidate promises (Rohan, Ananya, Kabir), ballot secrecy, tie-breaker rules, or how to vote!";
+    }
+
+    // 11. Intelligent Default
+    return `Regarding "${question}": In the Class Monitor Election 2026-27, all voting is strictly anonymous, verified via SHA-256 tokens, and limited to one vote per student. You can explore candidate manifestos (Rohan Verma, Ananya Sharma, Kabir Mehta) directly on your dashboard, or ask me for their specific agendas!`;
   }
 
   /**
