@@ -28,12 +28,7 @@ export function App() {
   const [isPitchOpen, setIsPitchOpen] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
   const [toastReceipt, setToastReceipt] = useState<{ code: string; email?: string } | null>(null);
-  const [resultsInitialTab, setResultsInitialTab] = useState<'tally' | 'audit' | 'database' | 'admin-audit'>('tally');
-
-  const handleOpenAdmin = () => {
-    setResultsInitialTab('admin-audit');
-    setIsResultsOpen(true);
-  };
+  const [resultsInitialTab, setResultsInitialTab] = useState<'tally' | 'voters' | 'audit'>('tally');
 
   // Initial local user loading
   useEffect(() => {
@@ -173,11 +168,7 @@ export function App() {
         <Navbar
           currentUser={currentUser}
           onOpenAuth={() => setIsAuthOpen(true)}
-          onOpenResults={() => {
-            setResultsInitialTab('tally');
-            setIsResultsOpen(true);
-          }}
-          onOpenAdmin={handleOpenAdmin}
+          onOpenResults={() => setIsResultsOpen(true)}
           onOpenVote={() => {
             if (!currentUser) {
               setIsAuthOpen(true);

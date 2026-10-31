@@ -11,10 +11,6 @@ import { requireAuth, requireRole } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
-// 🔒 STRICT ADMIN ONLY: Confidential Audit of who voted for whom
-router.get('/admin/vote-audit', requireAuth, requireRole(['ADMIN']), getAdminVoteAuditHandler);
-router.get('/:id/admin/vote-audit', requireAuth, requireRole(['ADMIN']), getAdminVoteAuditHandler);
-
 // Public / Authenticated Election Endpoints
 router.get('/active', getActiveElections);
 router.get('/database/all', getDatabaseRegistryHandler);
