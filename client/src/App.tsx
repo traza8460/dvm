@@ -28,6 +28,12 @@ export function App() {
   const [isPitchOpen, setIsPitchOpen] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
   const [toastReceipt, setToastReceipt] = useState<{ code: string; email?: string } | null>(null);
+  const [resultsInitialTab, setResultsInitialTab] = useState<'tally' | 'audit' | 'database' | 'admin-audit'>('tally');
+
+  const handleOpenAdmin = () => {
+    setResultsInitialTab('admin-audit');
+    setIsResultsOpen(true);
+  };
 
   // Initial local user loading
   useEffect(() => {
@@ -167,7 +173,11 @@ export function App() {
         <Navbar
           currentUser={currentUser}
           onOpenAuth={() => setIsAuthOpen(true)}
-          onOpenResults={() => setIsResultsOpen(true)}
+          onOpenResults={() => {
+            setResultsInitialTab('tally');
+            setIsResultsOpen(true);
+          }}
+          onOpenAdmin={handleOpenAdmin}
           onOpenVote={() => {
             if (!currentUser) {
               setIsAuthOpen(true);
@@ -304,6 +314,7 @@ export function App() {
         electionId={currentElection?.id || ''}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthOpen(true)}
+        initialTab={resultsInitialTab}
       />
 
       <PitchGeneratorModal

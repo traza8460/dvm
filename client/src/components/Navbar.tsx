@@ -5,6 +5,7 @@ interface NavbarProps {
   onOpenResults: () => void;
   onOpenVote: () => void;
   onOpenAuth: () => void;
+  onOpenAdmin: () => void;
   currentUser: any;
   onLogout: () => void;
   isLightMode: boolean;
@@ -15,6 +16,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenResults,
   onOpenVote,
   onOpenAuth,
+  onOpenAdmin,
   currentUser,
   onLogout,
   isLightMode,
@@ -69,17 +71,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="hidden sm:inline text-xs font-semibold">{isLightMode ? 'Dark' : 'Light'}</span>
           </button>
 
-          {/* Admin Audit Exclusive Button */}
-          {currentUser?.role === 'ADMIN' && (
-            <button
-              onClick={onOpenResults}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 text-xs font-bold shadow-[0_0_15px_rgba(244,63,94,0.3)] transition-all cursor-pointer"
-              title="Open Secret Admin Audit (Who Voted For Whom)"
-            >
-              <ShieldAlert className="w-4 h-4 text-rose-400" />
-              <span className="hidden sm:inline">Admin Audit</span>
-            </button>
-          )}
+          {/* Dedicated Admin Portal Button (Always Visible) */}
+          <button
+            onClick={onOpenAdmin}
+            className="flex items-center gap-1.5 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full bg-gradient-to-r from-rose-950/80 via-purple-950/70 to-indigo-950/80 hover:from-rose-900 hover:to-indigo-900 border border-rose-500/50 hover:border-rose-400 text-rose-300 hover:text-white text-xs sm:text-sm font-bold shadow-[0_0_15px_rgba(244,63,94,0.3)] transition-all cursor-pointer active:scale-95"
+            title="Admin Portal (Who Voted for Whom)"
+          >
+            <ShieldAlert className="w-4 h-4 text-rose-400" />
+            <span>Admin</span>
+          </button>
 
           {/* User Account / Logout (When logged in) */}
           {currentUser && (
