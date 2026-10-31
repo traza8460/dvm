@@ -43,23 +43,21 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* NAVIGATION: Right-Side Pill Buttons */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">
           
-          {/* Vote Pill */}
-          <button
-            onClick={onOpenVote}
-            className="flex items-center gap-2 px-4.5 py-2.5 rounded-full bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 hover:text-white border border-zinc-800 hover:border-zinc-700 transition-all duration-200 text-sm font-semibold shadow-sm"
+          {/* Vote Pill (Display only - non-clickable) */}
+          <div
+            className="flex items-center gap-2 px-4.5 py-2.5 rounded-full bg-zinc-900/90 text-zinc-200 border border-zinc-800 text-sm font-semibold shadow-sm select-none pointer-events-none"
           >
             <Vote className="w-4.5 h-4.5 text-indigo-400" />
             <span className="hidden xs:inline">Vote</span>
-          </button>
+          </div>
 
-          {/* Results Pill */}
-          <button
-            onClick={onOpenResults}
-            className="flex items-center gap-2 px-4.5 py-2.5 rounded-full bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 hover:text-white border border-zinc-800 hover:border-zinc-700 transition-all duration-200 text-sm font-semibold shadow-sm"
+          {/* Results Pill (Display only - non-clickable) */}
+          <div
+            className="flex items-center gap-2 px-4.5 py-2.5 rounded-full bg-zinc-900/90 text-zinc-200 border border-zinc-800 text-sm font-semibold shadow-sm select-none pointer-events-none"
           >
             <BarChart3 className="w-4.5 h-4.5 text-cyan-400" />
             <span className="hidden xs:inline">Results</span>
-          </button>
+          </div>
 
           {/* Dark / Light Toggle (Enlarged next to removed login) */}
           <button
