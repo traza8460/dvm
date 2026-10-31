@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { DatabaseSync } from 'node:sqlite';
+import { EmailService } from './services/emailService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -144,11 +145,30 @@ class DatabaseStore {
         electionId TEXT,
         studentId TEXT,
         studentName TEXT,
+        email TEXT,
+        className TEXT,
+        deviceId TEXT,
         candidateId TEXT,
         candidateName TEXT,
         candidateAvatar TEXT,
         receiptHash TEXT,
         votedAt TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS voted_devices (
+        deviceId TEXT,
+        electionId TEXT,
+        studentId TEXT,
+        votedAt TEXT,
+        PRIMARY KEY (deviceId, electionId)
+      );
+
+      CREATE TABLE IF NOT EXISTS voted_emails (
+        email TEXT,
+        electionId TEXT,
+        studentId TEXT,
+        votedAt TEXT,
+        PRIMARY KEY (email, electionId)
       );
     `);
   }
@@ -379,10 +399,18 @@ class DatabaseStore {
   }
 
   // Atomic Vote Submission with Fraud Prevention & Ballot Secrecy
-  async castVoteAtomic(userId: string, studentId: string, electionId: string, candidateId: string, salt: string): Promise<{ success: boolean; receiptHash: string }> {
+  async castVoteAtomic(
+    userId: string, 
+    studentId: string, 
+    electionId: string, 
+    candidateId: string, 
+    salt: string,
+    deviceId?: string,
+    customEmail?: string
+  ): Promise<{ success: boolean; receiptHash: string; receiptCode: string; sentToEmail: string }> {
     const receiptKey = `${electionId}_${userId}`;
 
-    // 1. Double Vote Check
+    // 1. Double Vote Check (Student ID / User)
     if (this.voterReceipts.has(receiptKey)) {
       throw new Error('DUPLICATE_VOTE: You have already cast your ballot in this election.');
     }
@@ -401,17 +429,42 @@ class DatabaseStore {
       throw new Error('CANDIDATE_NOT_FOUND: Invalid candidate selected.');
     }
 
-    // 2. Generate Irreversible Cryptographic Receipt Hash
-    // SHA-256(studentId + electionId + salt)
-    const receiptHash = crypto
-      .createHash('sha256')
-      .update(`${studentId}_${electionId}_${salt}`)
-      .digest('hex');
+    const user = this.users.get(userId);
+    const voterEmail = (customEmail || user?.email || `${studentId.toLowerCase()}@student.edu`).toLowerCase();
 
-    // 3. Decoupled Anonymous Ballot Nonce
+    // 2. Strict Phone / Device Lock (1 Vote Per Device Only)
+    if (deviceId) {
+      try {
+        const deviceRow = this.sqlite.prepare('SELECT * FROM voted_devices WHERE deviceId = ? AND electionId = ?').get(deviceId, electionId) as any;
+        if (deviceRow) {
+          throw new Error('DEVICE_ALREADY_VOTED: This phone/device has already been used to cast a ballot in this election. Strict policy: Only 1 vote per phone is permitted.');
+        }
+      } catch (err: any) {
+        if (err.message.startsWith('DEVICE_ALREADY_VOTED')) throw err;
+      }
+    }
+
+    // 3. Strict Email Lock (1 Vote Per Email Only)
+    if (voterEmail) {
+      try {
+        const emailRow = this.sqlite.prepare('SELECT * FROM voted_emails WHERE email = ? AND electionId = ?').get(voterEmail, electionId) as any;
+        if (emailRow) {
+          throw new Error(`EMAIL_ALREADY_VOTED: The email address "${voterEmail}" has already been used to vote in this election. Strict policy: Only 1 vote per email is permitted.`);
+        }
+      } catch (err: any) {
+        if (err.message.startsWith('EMAIL_ALREADY_VOTED')) throw err;
+      }
+    }
+
+    // 4. Generate Sequential Official Voter Receipt: REC-001, REC-002, REC-003...
+    const receiptIndex = this.voterReceipts.size + 1;
+    const receiptCode = `REC-${String(receiptIndex).padStart(3, '0')}`;
+    const receiptHash = receiptCode;
+
+    // 5. Decoupled Anonymous Ballot Nonce
     const ballotNonce = crypto.randomBytes(16).toString('hex');
 
-    // 4. Atomic Mutation
+    // 6. Atomic Mutation
     const receipt: VoterReceipt = {
       id: crypto.randomUUID(),
       electionId,
@@ -460,15 +513,32 @@ class DatabaseStore {
         UPDATE elections SET totalVotes = totalVotes + 1 WHERE id = ?
       `).run(election.id);
 
-      const user = this.users.get(userId);
+      // Record device lock
+      if (deviceId) {
+        this.sqlite.prepare(`
+          INSERT OR IGNORE INTO voted_devices (deviceId, electionId, studentId, votedAt)
+          VALUES (?, ?, ?, ?)
+        `).run(deviceId, electionId, studentId, receipt.votedAt);
+      }
+
+      // Record email lock
       this.sqlite.prepare(`
-        INSERT INTO admin_vote_audit (id, electionId, studentId, studentName, candidateId, candidateName, candidateAvatar, receiptHash, votedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR IGNORE INTO voted_emails (email, electionId, studentId, votedAt)
+        VALUES (?, ?, ?, ?)
+      `).run(voterEmail, electionId, studentId, receipt.votedAt);
+
+      // Record complete A to Z voter details for Admin Audit
+      this.sqlite.prepare(`
+        INSERT INTO admin_vote_audit (id, electionId, studentId, studentName, email, className, deviceId, candidateId, candidateName, candidateAvatar, receiptHash, votedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         crypto.randomUUID(),
         electionId,
         studentId,
         user?.fullName || 'Student Voter',
+        voterEmail,
+        user?.className || 'Grade 10-A',
+        deviceId || 'Kiosk-Device',
         candidate.id,
         candidate.fullName,
         candidate.avatarUrl,
@@ -479,7 +549,17 @@ class DatabaseStore {
       console.error('Failed to sync vote transaction to SQLite:', err);
     }
 
-    return { success: true, receiptHash };
+    // 7. Dispatch receipt to student's email asynchronously
+    EmailService.sendVoterReceipt({
+      toEmail: voterEmail,
+      studentName: user?.fullName || studentId,
+      studentId: studentId,
+      electionTitle: election.title,
+      receiptCode: receiptCode,
+      votedAt: receipt.votedAt
+    }).catch(e => console.warn('Email dispatch background note:', e.message));
+
+    return { success: true, receiptHash, receiptCode, sentToEmail: voterEmail };
   }
 
   // Database Overview: Categorized Data for Users, Voters, and Elected Members

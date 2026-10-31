@@ -27,7 +27,7 @@ export function App() {
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isPitchOpen, setIsPitchOpen] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
-  const [toastReceipt, setToastReceipt] = useState<string | null>(null);
+  const [toastReceipt, setToastReceipt] = useState<{ code: string; email?: string } | null>(null);
 
   // Initial local user loading
   useEffect(() => {
@@ -97,24 +97,39 @@ export function App() {
     setAuthToken('');
   };
 
+  const getDeviceId = () => {
+    let devId = localStorage.getItem('dvm_device_id');
+    if (!devId) {
+      devId = 'dev_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(36);
+      localStorage.setItem('dvm_device_id', devId);
+    }
+    return devId;
+  };
+
   const handleVote = async (electionId: string, candidateId: string) => {
     if (!currentUser || !authToken) {
       setIsAuthOpen(true);
       return;
     }
 
+    const deviceId = getDeviceId();
     const res = await fetch('/api/elections/vote', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${authToken}`
       },
-      body: JSON.stringify({ electionId, candidateId })
+      body: JSON.stringify({ 
+        electionId, 
+        candidateId,
+        deviceId,
+        email: currentUser.email 
+      })
     });
 
     const data = await res.json();
     if (!res.ok) {
-      alert(data.error || 'Failed to submit ballot');
+      alert(data.message || data.error || 'Failed to submit ballot');
       return;
     }
 
@@ -127,9 +142,12 @@ export function App() {
     });
 
     // Show cryptographic receipt toast
-    if (data.receiptHash) {
-      setToastReceipt(data.receiptHash);
-      setTimeout(() => setToastReceipt(null), 8000);
+    if (data.receiptHash || data.receiptCode) {
+      setToastReceipt({
+        code: data.receiptCode || data.receiptHash,
+        email: data.sentToEmail || currentUser.email || `${currentUser.studentId.toLowerCase()}@student.edu`
+      });
+      setTimeout(() => setToastReceipt(null), 10000);
     }
 
     // Refresh elections state
@@ -194,22 +212,39 @@ export function App() {
         </main>
       </div>
 
-      {/* Cryptographic Receipt Toast */}
+      {/* Official Voter Receipt Toast */}
       {toastReceipt && (
-        <div className="fixed bottom-6 left-6 z-50 max-w-md bg-[#0f111a] border border-emerald-500/50 rounded-2xl p-4 shadow-2xl animate-fade-in flex items-start gap-3">
-          <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
-            <CheckCircle2 className="w-5 h-5" />
+        <div className="fixed bottom-6 left-6 z-50 max-w-md bg-[#0f111a] border-2 border-emerald-500/60 rounded-2xl p-4 shadow-[0_0_30px_rgba(16,185,129,0.3)] animate-fade-in flex items-start gap-3.5 backdrop-blur-xl">
+          <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0 border border-emerald-500/40">
+            <CheckCircle2 className="w-6 h-6" />
           </div>
           <div className="flex-1 text-xs">
-            <div className="font-semibold text-white flex items-center gap-1.5">
-              <span>Ballot Cryptographically Cast</span>
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="font-semibold text-white flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-sm">
+                <span>Vote Successfully Cast!</span>
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              </span>
+              <span className="px-2.5 py-0.5 rounded-md font-mono font-black text-xs bg-emerald-950 border border-emerald-500/60 text-emerald-300 tracking-wider">
+                {toastReceipt.code}
+              </span>
             </div>
-            <p className="text-zinc-400 mt-0.5">
-              Identity decoupled. Irreversible SHA-256 Receipt:
+            <p className="text-zinc-300 mt-1">
+              Your ballot is anonymous and recorded. Here is your official receipt:
             </p>
-            <div className="font-mono text-[10px] text-purple-300 bg-[#161726] p-1.5 rounded mt-1 break-all border border-purple-500/20">
-              {toastReceipt}
+            <div className="flex items-center justify-between font-mono text-base font-extrabold text-emerald-300 bg-[#141724] p-2.5 rounded-xl mt-2 border border-emerald-500/40 shadow-inner">
+              <span className="tracking-widest drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]">{toastReceipt.code}</span>
+              <span className="text-[10px] font-sans font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/40">
+                OFFICIAL SLIP
+              </span>
+            </div>
+            {toastReceipt.email && (
+              <div className="flex items-center gap-1.5 text-[11px] text-zinc-300 mt-2 bg-black/50 px-2.5 py-1.5 rounded-lg border border-zinc-800">
+                <span className="text-emerald-400 font-semibold">📧 Receipt sent to:</span>
+                <span className="font-mono text-white truncate">{toastReceipt.email}</span>
+              </div>
+            )}
+            <div className="text-[10px] text-zinc-500 mt-1 font-mono">
+              🔒 Strict 1-Phone & 1-Email Device Lock Activated
             </div>
           </div>
         </div>

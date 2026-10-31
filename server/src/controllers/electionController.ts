@@ -30,7 +30,8 @@ export async function getActiveElections(req: AuthenticatedRequest, res: Respons
 
 export async function castVote(req: AuthenticatedRequest, res: Response) {
   try {
-    const { electionId, candidateId } = req.body;
+    const { electionId, candidateId, deviceId, email } = req.body;
+    const clientDeviceId = deviceId || (req.headers['x-device-id'] as string) || 'web-device';
     const user = req.user;
 
     if (!user) {
@@ -41,18 +42,32 @@ export async function castVote(req: AuthenticatedRequest, res: Response) {
       return res.status(400).json({ error: 'BAD_REQUEST', message: 'Election ID and Candidate ID are required.' });
     }
 
-    // Atomic execution with cryptographic receipt
-    const result = await db.castVoteAtomic(user.id, user.studentId, electionId, candidateId, SALT);
+    // Atomic execution with strict 1-phone & 1-email lock + receipt email dispatch
+    const result = await db.castVoteAtomic(
+      user.id, 
+      user.studentId, 
+      electionId, 
+      candidateId, 
+      SALT,
+      clientDeviceId,
+      email
+    );
 
     return res.status(200).json({
       success: true,
-      message: 'Ballot verified and recorded with cryptographic anonymity.',
+      message: `Ballot cast successfully! Receipt ${result.receiptCode} dispatched to ${result.sentToEmail}.`,
       receiptHash: result.receiptHash,
+      receiptCode: result.receiptCode,
+      sentToEmail: result.sentToEmail,
       timestamp: new Date().toISOString()
     });
   } catch (err: any) {
-    if (err.message.startsWith('DUPLICATE_VOTE')) {
-      return res.status(409).json({ error: 'DUPLICATE_VOTE', message: err.message });
+    if (
+      err.message.startsWith('DUPLICATE_VOTE') ||
+      err.message.startsWith('DEVICE_ALREADY_VOTED') ||
+      err.message.startsWith('EMAIL_ALREADY_VOTED')
+    ) {
+      return res.status(409).json({ error: 'CONFLICT_VOTE_BLOCKED', message: err.message });
     }
     return res.status(400).json({ error: 'VOTE_FAILED', message: err.message });
   }

@@ -634,9 +634,11 @@ export const ResultsModal: React.FC<ResultsModalProps> = ({
                         <thead className="bg-[#141522] text-zinc-400 font-semibold border-b border-[#232438]">
                           <tr>
                             <th className="py-2.5 px-3">Voter (Student)</th>
-                            <th className="py-2.5 px-3">Student Roll</th>
-                            <th className="py-2.5 px-3">Voted For (Candidate)</th>
-                            <th className="py-2.5 px-3">Cryptographic Receipt</th>
+                            <th className="py-2.5 px-3">Roll / ID</th>
+                            <th className="py-2.5 px-3">Voter Email</th>
+                            <th className="py-2.5 px-3">Candidate Voted For</th>
+                            <th className="py-2.5 px-3">Receipt Code</th>
+                            <th className="py-2.5 px-3">Device / Phone</th>
                             <th className="py-2.5 px-3">Time</th>
                             <th className="py-2.5 px-3 text-right">Audit</th>
                           </tr>
@@ -648,6 +650,7 @@ export const ResultsModal: React.FC<ResultsModalProps> = ({
                             return (
                               item.studentName?.toLowerCase().includes(s) ||
                               item.studentId?.toLowerCase().includes(s) ||
+                              item.email?.toLowerCase().includes(s) ||
                               item.candidateName?.toLowerCase().includes(s)
                             );
                           }).map((item: any) => (
@@ -659,6 +662,9 @@ export const ResultsModal: React.FC<ResultsModalProps> = ({
                                 <span>{item.studentName}</span>
                               </td>
                               <td className="py-2.5 px-3 text-cyan-300">{item.studentId}</td>
+                              <td className="py-2.5 px-3 text-zinc-300 font-mono text-[11px]">
+                                {item.email || `${item.studentId?.toLowerCase()}@student.edu`}
+                              </td>
                               <td className="py-2.5 px-3">
                                 <div className="flex items-center gap-2">
                                   {item.candidateAvatar && (
@@ -673,8 +679,11 @@ export const ResultsModal: React.FC<ResultsModalProps> = ({
                                   </span>
                                 </div>
                               </td>
-                              <td className="py-2.5 px-3 text-purple-300 text-[10px] truncate max-w-[120px]" title={item.receiptHash}>
+                              <td className="py-2.5 px-3 text-emerald-400 font-mono font-bold text-[11px]">
                                 {item.receiptHash}
+                              </td>
+                              <td className="py-2.5 px-3 text-zinc-400 text-[10px] truncate max-w-[90px]" title={item.deviceId || 'Mobile/PC Device'}>
+                                {item.deviceId || 'Mobile-Device'}
                               </td>
                               <td className="py-2.5 px-3 text-zinc-400 text-[10px] whitespace-nowrap">
                                 {new Date(item.votedAt).toLocaleTimeString()}
