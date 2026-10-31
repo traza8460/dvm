@@ -344,6 +344,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             )}
 
           </div>
+
+          {/* Bottom Wall Lamp Light Fixture & Warm Spotlight Beam (Reversed Symmetrical) */}
+          <div className="relative flex flex-col items-center mt-[-6px] pointer-events-none rotate-180">
+            <div className="w-24 sm:w-28 h-3.5 bg-gradient-to-b from-zinc-700 to-zinc-900 rounded-t-md border-t border-zinc-500 shadow-md" />
+            <div className="w-20 h-1.5 bg-amber-200/90 rounded-full shadow-[0_0_20px_#fde68a]" />
+            <div className="w-72 sm:w-96 h-16 bg-gradient-to-b from-amber-300/30 via-amber-400/10 to-transparent blur-xl -mt-1" />
+          </div>
         </div>
 
         {/* TRICOLOR ACCENT: Top & Bottom Lines around bottom badges */}
