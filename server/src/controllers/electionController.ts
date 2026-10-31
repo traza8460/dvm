@@ -133,8 +133,18 @@ export async function createElection(req: AuthenticatedRequest, res: Response) {
       createdAt: new Date().toISOString()
     };
 
-    db.elections.set(newElection.id, newElection);
+    db.saveElection(newElection);
     return res.status(201).json({ message: 'Election launched successfully', election: newElection });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+}
+
+export async function getDatabaseRegistryHandler(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const registry = db.getDatabaseRegistry(id);
+    return res.json(registry);
   } catch (err: any) {
     return res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
   }

@@ -40,7 +40,7 @@ export async function handleRegister(req: Request, res: Response) {
       createdAt: new Date().toISOString()
     };
 
-    db.users.set(newUser.id, newUser);
+    db.saveUser(newUser);
 
     const token = jwt.sign(
       { id: newUser.id, studentId: newUser.studentId, role: newUser.role, className: newUser.className },

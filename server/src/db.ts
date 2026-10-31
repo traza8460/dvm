@@ -1,4 +1,11 @@
 import crypto from 'crypto';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { DatabaseSync } from 'node:sqlite';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const dbFilePath = path.resolve(__dirname, '../dvm.db');
 
 export type Role = 'STUDENT' | 'CANDIDATE' | 'ADMIN';
 export type ElectionStatus = 'UPCOMING' | 'ACTIVE' | 'CLOSED';
@@ -25,6 +32,7 @@ export interface Candidate {
   summaryAI?: string;
   avatarUrl: string;
   voteCount: number;
+  isElected?: boolean;
   createdAt: string;
 }
 
@@ -57,25 +65,175 @@ export interface Vote {
   timestamp: string;
 }
 
-// In-Memory Thread-Safe & Atomic Database Store with Seed Data
+// Persistent Native SQLite 3 Database Store with Separate Categorized Tables
 class DatabaseStore {
+  private sqlite: DatabaseSync;
   users: Map<string, User> = new Map();
   elections: Map<string, Election> = new Map();
   voterReceipts: Map<string, VoterReceipt> = new Map(); // key: electionId_userId
   votes: Vote[] = [];
 
   constructor() {
-    this.seedInitialData();
+    this.sqlite = new DatabaseSync(dbFilePath);
+    this.initTables();
+    this.loadFromSQLite();
+    if (this.users.size === 0 || this.elections.size === 0) {
+      this.seedInitialData();
+    }
+  }
+
+  private initTables() {
+    this.sqlite.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        studentId TEXT UNIQUE,
+        fullName TEXT,
+        email TEXT UNIQUE,
+        passwordHash TEXT,
+        role TEXT,
+        className TEXT,
+        createdAt TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS elections (
+        id TEXT PRIMARY KEY,
+        title TEXT,
+        description TEXT,
+        targetClass TEXT,
+        status TEXT,
+        startTime TEXT,
+        endTime TEXT,
+        totalVotes INTEGER DEFAULT 0,
+        createdAt TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS candidates (
+        id TEXT PRIMARY KEY,
+        userId TEXT,
+        fullName TEXT,
+        studentId TEXT,
+        electionId TEXT,
+        slogan TEXT,
+        manifesto TEXT,
+        summaryAI TEXT,
+        avatarUrl TEXT,
+        voteCount INTEGER DEFAULT 0,
+        isElected INTEGER DEFAULT 0,
+        createdAt TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS voter_receipts (
+        id TEXT PRIMARY KEY,
+        electionId TEXT,
+        userId TEXT,
+        receiptHash TEXT UNIQUE,
+        votedAt TEXT,
+        UNIQUE(electionId, userId)
+      );
+
+      CREATE TABLE IF NOT EXISTS votes (
+        id TEXT PRIMARY KEY,
+        electionId TEXT,
+        candidateId TEXT,
+        ballotNonce TEXT UNIQUE,
+        timestamp TEXT
+      );
+    `);
+  }
+
+  private loadFromSQLite() {
+    try {
+      // 1. Load users
+      const userRows = this.sqlite.prepare('SELECT * FROM users').all() as any[];
+      for (const row of userRows) {
+        this.users.set(row.id, {
+          id: row.id,
+          studentId: row.studentId,
+          fullName: row.fullName,
+          email: row.email,
+          passwordHash: row.passwordHash,
+          role: row.role as Role,
+          className: row.className,
+          createdAt: row.createdAt
+        });
+      }
+
+      // 2. Load candidates
+      const candRows = this.sqlite.prepare('SELECT * FROM candidates').all() as any[];
+      const candidatesByElec = new Map<string, Candidate[]>();
+      for (const row of candRows) {
+        const cand: Candidate = {
+          id: row.id,
+          userId: row.userId,
+          fullName: row.fullName,
+          studentId: row.studentId,
+          electionId: row.electionId,
+          slogan: row.slogan,
+          manifesto: row.manifesto,
+          summaryAI: row.summaryAI,
+          avatarUrl: row.avatarUrl,
+          voteCount: Number(row.voteCount || 0),
+          isElected: Boolean(row.isElected),
+          createdAt: row.createdAt
+        };
+        const list = candidatesByElec.get(row.electionId) || [];
+        list.push(cand);
+        candidatesByElec.set(row.electionId, list);
+      }
+
+      // 3. Load elections
+      const elecRows = this.sqlite.prepare('SELECT * FROM elections').all() as any[];
+      for (const row of elecRows) {
+        const cands = candidatesByElec.get(row.id) || [];
+        this.elections.set(row.id, {
+          id: row.id,
+          title: row.title,
+          description: row.description,
+          targetClass: row.targetClass,
+          status: row.status as ElectionStatus,
+          startTime: row.startTime,
+          endTime: row.endTime,
+          totalVotes: Number(row.totalVotes || 0),
+          candidates: cands,
+          createdAt: row.createdAt
+        });
+      }
+
+      // 4. Load voter receipts
+      const receiptRows = this.sqlite.prepare('SELECT * FROM voter_receipts').all() as any[];
+      for (const row of receiptRows) {
+        this.voterReceipts.set(`${row.electionId}_${row.userId}`, {
+          id: row.id,
+          electionId: row.electionId,
+          userId: row.userId,
+          receiptHash: row.receiptHash,
+          votedAt: row.votedAt
+        });
+      }
+
+      // 5. Load votes
+      const voteRows = this.sqlite.prepare('SELECT * FROM votes').all() as any[];
+      for (const row of voteRows) {
+        this.votes.push({
+          id: row.id,
+          electionId: row.electionId,
+          candidateId: row.candidateId,
+          ballotNonce: row.ballotNonce,
+          timestamp: row.timestamp
+        });
+      }
+    } catch (err) {
+      console.warn('Error loading from SQLite, will seed:', err);
+    }
   }
 
   private seedInitialData() {
-    // 1. Seed Demo Students & Admin
     const adminUser: User = {
       id: 'admin-1',
       studentId: 'ADMIN-001',
       fullName: 'Prof. Sharma (Election Officer)',
       email: 'admin@school.edu',
-      passwordHash: '$2a$10$vU8mR36h1T4i1E2dG8gDwe5p1l8C1f3r6s8y0u2w4z6x8a0b2c4d6', // demoPassword123
+      passwordHash: '$2a$10$vU8mR36h1T4i1E2dG8gDwe5p1l8C1f3r6s8y0u2w4z6x8a0b2c4d6',
       role: 'ADMIN',
       className: 'Staff',
       createdAt: new Date().toISOString()
@@ -92,10 +250,9 @@ class DatabaseStore {
       createdAt: new Date().toISOString()
     };
 
-    this.users.set(adminUser.id, adminUser);
-    this.users.set(studentUser.id, studentUser);
+    this.saveUser(adminUser);
+    this.saveUser(studentUser);
 
-    // 2. Seed Active Election: "Class Monitor Election 2026-27"
     const electionId = 'elec-class-10a';
     const c1: Candidate = {
       id: 'cand-1',
@@ -122,6 +279,7 @@ class DatabaseStore {
       summaryAI: '• Centralized digital study repository\n• Inter-house debate & quiz prep\n• Clean water & smart-board upkeep',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
       voteCount: 18,
+      isElected: true, // Currently leading candidate
       createdAt: new Date().toISOString()
     };
 
@@ -151,7 +309,61 @@ class DatabaseStore {
       createdAt: new Date().toISOString()
     };
 
+    this.saveElection(election);
+  }
+
+  saveUser(user: User) {
+    this.users.set(user.id, user);
+    try {
+      this.sqlite.prepare(`
+        INSERT OR REPLACE INTO users (id, studentId, fullName, email, passwordHash, role, className, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(user.id, user.studentId, user.fullName, user.email, user.passwordHash, user.role, user.className, user.createdAt);
+    } catch (err) {
+      console.error('Failed to persist user to SQLite:', err);
+    }
+  }
+
+  saveElection(election: Election) {
     this.elections.set(election.id, election);
+    try {
+      this.sqlite.prepare(`
+        INSERT OR REPLACE INTO elections (id, title, description, targetClass, status, startTime, endTime, totalVotes, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        election.id,
+        election.title,
+        election.description,
+        election.targetClass,
+        election.status,
+        election.startTime,
+        election.endTime || null,
+        election.totalVotes,
+        election.createdAt
+      );
+
+      for (const c of election.candidates) {
+        this.sqlite.prepare(`
+          INSERT OR REPLACE INTO candidates (id, userId, fullName, studentId, electionId, slogan, manifesto, summaryAI, avatarUrl, voteCount, isElected, createdAt)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          c.id,
+          c.userId,
+          c.fullName,
+          c.studentId,
+          c.electionId,
+          c.slogan,
+          c.manifesto,
+          c.summaryAI || null,
+          c.avatarUrl,
+          c.voteCount,
+          c.isElected ? 1 : 0,
+          c.createdAt
+        );
+      }
+    } catch (err) {
+      console.error('Failed to persist election to SQLite:', err);
+    }
   }
 
   // Atomic Vote Submission with Fraud Prevention & Ballot Secrecy
@@ -210,7 +422,92 @@ class DatabaseStore {
     candidate.voteCount += 1;
     election.totalVotes += 1;
 
+    // Recalculate elected member (top votes)
+    const maxVotes = Math.max(...election.candidates.map(c => c.voteCount));
+    for (const c of election.candidates) {
+      c.isElected = c.voteCount === maxVotes && c.voteCount > 0;
+    }
+
+    // Write to SQLite database
+    try {
+      this.sqlite.prepare(`
+        INSERT INTO voter_receipts (id, electionId, userId, receiptHash, votedAt)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(receipt.id, receipt.electionId, receipt.userId, receipt.receiptHash, receipt.votedAt);
+
+      this.sqlite.prepare(`
+        INSERT INTO votes (id, electionId, candidateId, ballotNonce, timestamp)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(vote.id, vote.electionId, vote.candidateId, vote.ballotNonce, vote.timestamp);
+
+      this.sqlite.prepare(`
+        UPDATE candidates SET voteCount = voteCount + 1, isElected = ? WHERE id = ?
+      `).run(candidate.isElected ? 1 : 0, candidate.id);
+
+      this.sqlite.prepare(`
+        UPDATE elections SET totalVotes = totalVotes + 1 WHERE id = ?
+      `).run(election.id);
+    } catch (err) {
+      console.error('Failed to sync vote transaction to SQLite:', err);
+    }
+
     return { success: true, receiptHash };
+  }
+
+  // Database Overview: Categorized Data for Users, Voters, and Elected Members
+  getDatabaseRegistry(electionId?: string) {
+    const allUsers = Array.from(this.users.values()).map(u => ({
+      id: u.id,
+      studentId: u.studentId,
+      fullName: u.fullName,
+      email: u.email,
+      role: u.role,
+      className: u.className,
+      createdAt: u.createdAt
+    }));
+
+    const allVoters = Array.from(this.voterReceipts.values()).map(r => {
+      const user = this.users.get(r.userId);
+      return {
+        id: r.id,
+        electionId: r.electionId,
+        studentId: user?.studentId || 'CONFIDENTIAL',
+        voterName: user?.fullName || 'Verified Student',
+        receiptHash: r.receiptHash,
+        votedAt: r.votedAt,
+        status: 'VERIFIED_ANONYMOUS_BALLOT'
+      };
+    });
+
+    const targetElec = electionId ? this.elections.get(electionId) : Array.from(this.elections.values())[0];
+    const candidates = targetElec?.candidates || [];
+    const maxVotes = Math.max(...candidates.map(c => c.voteCount), 0);
+
+    const candidatesList = candidates.map(c => ({
+      id: c.id,
+      fullName: c.fullName,
+      studentId: c.studentId,
+      slogan: c.slogan,
+      manifesto: c.manifesto,
+      voteCount: c.voteCount,
+      isElected: c.voteCount === maxVotes && c.voteCount > 0,
+      avatarUrl: c.avatarUrl
+    }));
+
+    const electedMembers = candidatesList.filter(c => c.isElected);
+
+    return {
+      stats: {
+        totalRegisteredUsers: allUsers.length,
+        totalBallotsCast: allVoters.length,
+        totalCandidates: candidatesList.length,
+        totalElectedMembers: electedMembers.length
+      },
+      users: allUsers,
+      voters: allVoters,
+      candidates: candidatesList,
+      electedMembers: electedMembers
+    };
   }
 }
 

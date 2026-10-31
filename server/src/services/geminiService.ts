@@ -3,24 +3,37 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const API_KEY = process.env.GEMINI_API_KEY || '';
+const PREFERRED_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
 
 export class GeminiService {
   /**
+   * Helper: Runs prompt using the best available Gemini model with cascading fallback
+   */
+  private static async runGeminiPrompt(prompt: string): Promise<string> {
+    if (!genAI || !API_KEY) return '';
+    const modelsToTry = [PREFERRED_MODEL, 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-flash'];
+
+    for (const modelName of modelsToTry) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        const text = result?.response?.text()?.trim();
+        if (text) return text;
+      } catch (err: any) {
+        console.warn(`[GeminiService] Model ${modelName} returned error, trying fallback...`, err?.message || err);
+      }
+    }
+    return '';
+  }
+
+  /**
    * Summarizes a student candidate's manifesto into 3 high-impact promises.
    */
   static async summarizeManifesto(candidateName: string, manifestoText: string): Promise<string[]> {
-    if (!genAI || !API_KEY) {
-      return [
-        'Establish weekly student doubt clearing windows with subject mentors.',
-        'Equalize sports gear access and promote transparent zero-period activities.',
-        'Introduce an anonymous class grievance box for immediate problem resolution.'
-      ];
-    }
-
-    try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      const prompt = `You are an election analyst for student council voting.
+    if (genAI && API_KEY) {
+      try {
+        const prompt = `You are an election analyst for student council voting.
 Candidate: "${candidateName}"
 Raw Manifesto:
 """
@@ -30,15 +43,27 @@ ${manifestoText}
 Task: Summarize this candidate's manifesto into exactly 3 punchy, realistic student promises (bullet points).
 Format: Return ONLY a valid JSON array of 3 strings: ["Promise 1", "Promise 2", "Promise 3"]. No extra markdown.`;
 
-      const result = await model.generateContent(prompt);
-      const text = result.response.text().trim();
-      const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(cleaned);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.slice(0, 3);
+        const text = await GeminiService.runGeminiPrompt(prompt);
+        if (text) {
+          const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+          const parsed = JSON.parse(cleaned);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.slice(0, 3);
+          }
+        }
+      } catch (err) {
+        console.warn('Gemini summarize error, using deterministic fallback', err);
       }
-    } catch (err) {
-      console.warn('Gemini summarize error, using deterministic fallback', err);
+    }
+
+    // Dynamic contextual fallback extraction
+    const lines = manifestoText
+      .split(/[.\n;]+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 15);
+
+    if (lines.length >= 3) {
+      return lines.slice(0, 3);
     }
 
     return [
@@ -52,21 +77,9 @@ Format: Return ONLY a valid JSON array of 3 strings: ["Promise 1", "Promise 2", 
    * Compares 2 or more candidates' manifestos objectively without bias.
    */
   static async compareManifestos(candidates: { name: string; manifesto: string }[]): Promise<any> {
-    if (!genAI || !API_KEY) {
-      return {
-        summary: "Objective AI analysis based on verified student council manifestos.",
-        comparisons: candidates.map(c => ({
-          name: c.name,
-          coreFocus: "Class welfare and academic balance",
-          strengths: ["Strong student communication", "Actionable short-term proposals"],
-          targetArea: "Academics & Sports Coordination"
-        }))
-      };
-    }
-
-    try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      const prompt = `Analyze and compare these candidate manifestos objectively for a high school Class Monitor election:
+    if (genAI && API_KEY) {
+      try {
+        const prompt = `Analyze and compare these candidate manifestos objectively for a high school Class Monitor election:
 ${JSON.stringify(candidates, null, 2)}
 
 Provide an unbiased comparative breakdown highlighting each candidate's core focus, specific strengths, and key area of intervention.
@@ -83,21 +96,25 @@ Return ONLY valid JSON matching this structure:
   ]
 }`;
 
-      const result = await model.generateContent(prompt);
-      const text = result.response.text().trim().replace(/```json/gi, '').replace(/```/g, '').trim();
-      return JSON.parse(text);
-    } catch (err) {
-      console.warn('Gemini compare error, returning fallback', err);
-      return {
-        summary: "Both candidates offer actionable initiatives for academic support and peer engagement.",
-        comparisons: candidates.map(c => ({
-          name: c.name,
-          coreFocus: "Student representation and resource accessibility",
-          strengths: ["High peer accountability", "Transparent representation"],
-          targetArea: "General Class Welfare"
-        }))
-      };
+        const text = await GeminiService.runGeminiPrompt(prompt);
+        if (text) {
+          const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+          return JSON.parse(cleaned);
+        }
+      } catch (err) {
+        console.warn('Gemini compare error, returning fallback', err);
+      }
     }
+
+    return {
+      summary: "All candidates present well-rounded platforms balancing academic rigor with student welfare.",
+      comparisons: candidates.map(c => ({
+        name: c.name,
+        coreFocus: "Class welfare, academic support, and student voice",
+        strengths: ["High accountability", "Transparent student representation"],
+        targetArea: "General Class Welfare"
+      }))
+    };
   }
 
   /**
@@ -106,7 +123,6 @@ Return ONLY valid JSON matching this structure:
   static async askElectionAssistant(question: string, electionContext: any): Promise<string> {
     if (genAI && API_KEY) {
       try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
         const prompt = `You are the helpful, objective AI Election Proctor and Guide for the Digital Voting Machine (DVM) in student elections.
 Election Context:
 ${JSON.stringify(electionContext, null, 2)}
@@ -115,8 +131,7 @@ Student Question: "${question}"
 
 Provide a concise, encouraging, and strictly objective 2-3 sentence answer directly answering the question. Remind the student of voting deadlines or secrecy if relevant.`;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text().trim();
+        const text = await GeminiService.runGeminiPrompt(prompt);
         if (text) return text;
       } catch (err) {
         console.warn('Gemini API call failed, using intelligent contextual answer generator:', err);
