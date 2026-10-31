@@ -5,6 +5,7 @@ interface NavbarProps {
   onOpenResults: () => void;
   onOpenVote: () => void;
   onOpenAuth: () => void;
+  onOpenAdmin: () => void;
   currentUser: any;
   onLogout: () => void;
   isLightMode: boolean;
@@ -15,6 +16,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenResults,
   onOpenVote,
   onOpenAuth,
+  onOpenAdmin,
   currentUser,
   onLogout,
   isLightMode,
@@ -43,21 +45,35 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* NAVIGATION: Right-Side Pill Buttons */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">
           
-          {/* Vote Pill (Display only - non-clickable) */}
-          <div
-            className="flex items-center gap-2 px-4.5 py-2.5 rounded-full bg-zinc-900/90 text-zinc-200 border border-zinc-800 text-sm font-semibold shadow-sm select-none pointer-events-none"
+          {/* Vote Pill */}
+          <button
+            onClick={onOpenVote}
+            className="flex items-center gap-2 px-4.5 py-2.5 rounded-full bg-zinc-900/90 hover:bg-indigo-950/40 text-zinc-200 hover:text-indigo-300 border border-zinc-800 hover:border-indigo-500/40 text-sm font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
           >
             <Vote className="w-4.5 h-4.5 text-indigo-400" />
             <span className="hidden xs:inline">Vote</span>
-          </div>
+          </button>
 
-          {/* Results Pill (Display only - non-clickable) */}
-          <div
-            className="flex items-center gap-2 px-4.5 py-2.5 rounded-full bg-zinc-900/90 text-zinc-200 border border-zinc-800 text-sm font-semibold shadow-sm select-none pointer-events-none"
+          {/* Results Pill */}
+          <button
+            onClick={onOpenResults}
+            className="flex items-center gap-2 px-4.5 py-2.5 rounded-full bg-zinc-900/90 hover:bg-cyan-950/40 text-zinc-200 hover:text-cyan-300 border border-zinc-800 hover:border-cyan-500/40 text-sm font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
           >
             <BarChart3 className="w-4.5 h-4.5 text-cyan-400" />
             <span className="hidden xs:inline">Results</span>
-          </div>
+          </button>
+
+          {/* Dedicated Admin Portal Button (Hidden for regular students) */}
+          {currentUser?.role !== 'STUDENT' && (
+            <button
+              onClick={onOpenAdmin}
+              className="flex items-center gap-1.5 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full bg-gradient-to-r from-rose-950/80 via-purple-950/70 to-indigo-950/80 hover:from-rose-900 hover:to-indigo-900 border border-rose-500/50 hover:border-rose-400 text-rose-300 hover:text-white text-xs sm:text-sm font-bold shadow-[0_0_15px_rgba(244,63,94,0.3)] transition-all cursor-pointer active:scale-95"
+              title="Admin Portal (Audit & Security)"
+            >
+              <ShieldAlert className="w-4 h-4 text-rose-400" />
+              <span>Admin</span>
+            </button>
+          )}
 
           {/* Dark / Light Toggle (Enlarged next to removed login) */}
           <button

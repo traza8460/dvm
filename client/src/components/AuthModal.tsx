@@ -23,8 +23,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    setIsRegister(initialMode === 'register');
-    setError('');
+    if (isOpen) {
+      setIsRegister(initialMode === 'register');
+      setStudentId('');
+      setPassword('');
+      setError('');
+    }
   }, [initialMode, isOpen]);
 
   if (!isOpen) return null;
@@ -62,16 +66,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  const handleQuickDemo = (type: 'student' | 'admin') => {
-    if (type === 'student') {
-      setStudentId('STU-001');
-      setPassword('pass123');
-    } else {
-      setStudentId('ADMIN-001');
-      setPassword('admin123');
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
       <div className="w-full max-w-md bg-[#0e1017] border border-[#27273a] rounded-2xl shadow-2xl overflow-hidden">
@@ -97,31 +91,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </button>
         </div>
 
-        {/* Quick Demo Fillers */}
-        <div className="p-4 bg-[#141522] border-b border-[#1e1f2f] flex items-center justify-between text-xs">
-          <span className="text-zinc-400 flex items-center gap-1 font-medium">
-            <ShieldCheck className="w-3.5 h-3.5 text-purple-400" /> 1-Click Demo:
-          </span>
+        {/* Quick 1-Click Demo Fillers */}
+        <div className="p-3 px-6 bg-[#141522] border-b border-[#1e1f2f] flex items-center justify-between text-xs">
+          <span className="text-zinc-400 font-medium">Quick Fill:</span>
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => handleQuickDemo('student')}
-              className="px-2.5 py-1 rounded-md bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono transition-colors"
+              onClick={() => {
+                setStudentId('STU-001');
+                setPassword('pass123');
+              }}
+              className="px-2.5 py-1 rounded-md bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono text-[11px] transition-colors cursor-pointer"
             >
-              Demo Student
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemo('admin')}
-              className="px-2.5 py-1 rounded-md bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono transition-colors"
-            >
-              Demo Admin
+              STU-001
             </button>
           </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} autoComplete="off" data-lpignore="true" data-form-type="other" className="p-6 space-y-4 text-xs">
           {error && (
             <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs">
               {error}
@@ -139,7 +127,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={fullName}
                     onChange={e => setFullName(e.target.value)}
-                    placeholder="e.g. Rahul Sharma"
+                    placeholder="Full Name"
                     className="w-full bg-[#181926] border border-zinc-700/60 focus:border-purple-500 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-zinc-500 outline-none"
                   />
                 </div>
@@ -160,7 +148,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           )}
 
           <div>
-            <label className="block text-zinc-300 font-medium mb-1.5">Student ID or Admin ID</label>
+            <label className="block text-zinc-300 font-medium mb-1.5">Student ID</label>
             <div className="relative">
               <GraduationCap className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
@@ -168,7 +156,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 required
                 value={studentId}
                 onChange={e => setStudentId(e.target.value)}
-                placeholder="e.g. STU-001 or ADMIN-001"
+                placeholder="Student ID"
+                autoComplete="off"
                 className="w-full bg-[#181926] border border-zinc-700/60 focus:border-purple-500 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-zinc-500 outline-none font-mono"
               />
             </div>
@@ -184,6 +173,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
+                autoComplete="new-password"
                 className="w-full bg-[#181926] border border-zinc-700/60 focus:border-purple-500 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-zinc-500 outline-none"
               />
             </div>

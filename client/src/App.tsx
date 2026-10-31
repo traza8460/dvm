@@ -6,6 +6,7 @@ import { OpenElectionsCard } from './components/OpenElectionsCard';
 import { GeminiAssistantModal } from './components/GeminiAssistantModal';
 import { ManifestoModal } from './components/ManifestoModal';
 import { ResultsModal } from './components/ResultsModal';
+import { AdminModal } from './components/AdminModal';
 import { AuthModal } from './components/AuthModal';
 import { PitchGeneratorModal } from './components/PitchGeneratorModal';
 import { AnimatedBackground } from './components/AnimatedBackground';
@@ -24,6 +25,7 @@ export function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isResultsOpen, setIsResultsOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isPitchOpen, setIsPitchOpen] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
@@ -177,6 +179,7 @@ export function App() {
               if (el) el.scrollIntoView({ behavior: 'smooth' });
             }
           }}
+          onOpenAdmin={() => setIsAdminOpen(true)}
           onLogout={handleLogout}
           isLightMode={!isDarkMode}
           onToggleTheme={() => setIsDarkMode(!isDarkMode)}
@@ -306,6 +309,14 @@ export function App() {
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthOpen(true)}
         initialTab={resultsInitialTab}
+      />
+
+      <AdminModal
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        onLoginSuccess={handleLoginSuccess}
       />
 
       <PitchGeneratorModal

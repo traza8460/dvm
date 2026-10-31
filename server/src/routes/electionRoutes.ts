@@ -18,7 +18,9 @@ router.get('/:id/database-registry', getDatabaseRegistryHandler);
 router.get('/:id/results', getElectionResults);
 router.post('/vote', requireAuth, castVote);
 
-// Admin Only - Create Election
+// 🔒 STRICT ADMIN ONLY: Confidential Audit of who voted for whom & Admin Management
+router.get('/admin/vote-audit', requireAuth, requireRole(['ADMIN']), getAdminVoteAuditHandler);
+router.get('/:id/admin/vote-audit', requireAuth, requireRole(['ADMIN']), getAdminVoteAuditHandler);
 router.post('/admin', requireAuth, requireRole(['ADMIN']), createElection);
 
 export default router;
